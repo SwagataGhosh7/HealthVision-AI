@@ -21,7 +21,7 @@ const HeroSection = () => {
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-4 py-1.5 mb-8">
               <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-xs font-medium text-secondary-foreground">AI-Powered Medical Diagnostics</span>
+              <span className="text-xs font-medium text-secondary-foreground">Make Healthcare Great Again</span>
             </div>
           </motion.div>
 
@@ -52,10 +52,10 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button size="lg" className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity text-base px-8">
+            <Button size="lg" className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity text-base px-8" onClick={() => window.location.href = '/auth'}>
               Start Diagnosis <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-            <Button size="lg" variant="outline" className="border-border/60 text-foreground hover:bg-secondary/50 text-base px-8">
+            <Button size="lg" variant="outline" className="border-border/60 text-foreground hover:bg-secondary/50 text-base px-8" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
               View Research
             </Button>
           </motion.div>
