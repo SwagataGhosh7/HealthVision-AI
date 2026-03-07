@@ -1,1 +1,4 @@
 project_id = "ayfwaazikrzjdllecepe"
+
+[functions.analyze-medical]
+verify_jwt = false
