@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <motion.nav
@@ -16,7 +18,7 @@ const Navbar = () => {
       className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 backdrop-blur-xl bg-background/80"
     >
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
           <div className="h-9 w-9 rounded-lg bg-gradient-accent flex items-center justify-center glow">
             <Activity className="h-5 w-5 text-accent-foreground" />
           </div>
@@ -38,12 +40,20 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-            Sign In
-          </Button>
-          <Button size="sm" className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity">
-            Get Started
-          </Button>
+          {user ? (
+            <Button size="sm" className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity" onClick={() => navigate("/dashboard")}>
+              Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => navigate("/auth")}>
+                Sign In
+              </Button>
+              <Button size="sm" className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity" onClick={() => navigate("/auth")}>
+                Get Started
+              </Button>
+            </>
+          )}
         </div>
 
         <button className="md:hidden text-foreground" onClick={() => setIsOpen(!isOpen)}>
@@ -63,7 +73,11 @@ const Navbar = () => {
                 {item}
               </a>
             ))}
-            <Button size="sm" className="bg-gradient-accent text-accent-foreground mt-2">Get Started</Button>
+            {user ? (
+              <Button size="sm" className="bg-gradient-accent text-accent-foreground mt-2" onClick={() => navigate("/dashboard")}>Dashboard</Button>
+            ) : (
+              <Button size="sm" className="bg-gradient-accent text-accent-foreground mt-2" onClick={() => navigate("/auth")}>Get Started</Button>
+            )}
           </div>
         </motion.div>
       )}
