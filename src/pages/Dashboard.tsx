@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, Upload, FileText, HeartPulse, Brain, AlertTriangle,
-  CheckCircle, Clock, LogOut, User, Plus, Trash2, TrendingUp
+  CheckCircle, LogOut, TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,6 @@ import DiagnosisHistory from "@/components/dashboard/DiagnosisHistory";
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -55,7 +54,6 @@ const Dashboard = () => {
 
     setAnalyzing(true);
     try {
-      // Upload file to storage
       const fileExt = selectedFile.name.split(".").pop();
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
@@ -65,7 +63,6 @@ const Dashboard = () => {
 
       if (uploadError) throw uploadError;
 
-      // Create diagnosis record
       const { data: diagnosis, error: insertError } = await supabase
         .from("diagnoses")
         .insert({
@@ -80,7 +77,6 @@ const Dashboard = () => {
 
       if (insertError) throw insertError;
 
-      // Convert file to base64 for AI analysis
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = (reader.result as string).split(",")[1];
@@ -91,7 +87,6 @@ const Dashboard = () => {
               image_base64: base64,
               file_type: selectedFile.type,
               description: description,
-              diagnosis_id: diagnosis.id,
             },
           });
 
@@ -100,7 +95,6 @@ const Dashboard = () => {
           const result = resp.data;
           setAnalysisResult(result);
 
-          // Update diagnosis with results
           await supabase
             .from("diagnoses")
             .update({
@@ -118,12 +112,13 @@ const Dashboard = () => {
             .update({ status: "error" })
             .eq("id", diagnosis.id);
           toast.error(error.message || "Analysis failed");
+        } finally {
+          setAnalyzing(false);
         }
       };
       reader.readAsDataURL(selectedFile);
     } catch (error: any) {
       toast.error(error.message || "Upload failed");
-    } finally {
       setAnalyzing(false);
     }
   };
@@ -142,7 +137,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Nav */}
       <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80 sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between h-16 px-4">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
@@ -165,7 +159,6 @@ const Dashboard = () => {
       </nav>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Tab Navigation */}
         <div className="flex gap-2 mb-8">
           {[
             { id: "diagnose" as const, icon: Brain, label: "AI Diagnosis" },
@@ -186,10 +179,8 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Diagnose Tab */}
         {activeTab === "diagnose" && (
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Upload Section */}
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
               <Card className="bg-card border-border/60">
                 <CardHeader>
@@ -211,12 +202,8 @@ const Dashboard = () => {
                     ) : (
                       <div>
                         <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground text-sm">
-                          Click to upload or drag & drop
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Supports: JPG, PNG, DICOM, PDF (max 20MB)
-                        </p>
+                        <p className="text-muted-foreground text-sm">Click to upload or drag & drop</p>
+                        <p className="text-xs text-muted-foreground mt-1">Supports: JPG, PNG, DICOM, PDF (max 20MB)</p>
                       </div>
                     )}
                     <input
@@ -250,20 +237,15 @@ const Dashboard = () => {
                     className="w-full bg-gradient-accent text-accent-foreground glow hover:opacity-90"
                   >
                     {analyzing ? (
-                      <>
-                        <Brain className="h-4 w-4 mr-2 animate-pulse" /> Analyzing with AI...
-                      </>
+                      <><Brain className="h-4 w-4 mr-2 animate-pulse" /> Analyzing with AI...</>
                     ) : (
-                      <>
-                        <Brain className="h-4 w-4 mr-2" /> Analyze Report
-                      </>
+                      <><Brain className="h-4 w-4 mr-2" /> Analyze Report</>
                     )}
                   </Button>
                 </CardContent>
               </Card>
             </motion.div>
 
-            {/* Results Section */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               <Card className="bg-card border-border/60">
                 <CardHeader>
@@ -277,13 +259,10 @@ const Dashboard = () => {
                     <div className="text-center py-12">
                       <Brain className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
                       <p className="text-foreground font-medium">AI is analyzing your report...</p>
-                      <p className="text-muted-foreground text-sm mt-1">
-                        Using Computer Vision to detect anomalies
-                      </p>
+                      <p className="text-muted-foreground text-sm mt-1">Using Computer Vision to detect anomalies</p>
                     </div>
                   ) : analysisResult ? (
                     <div className="space-y-6">
-                      {/* Severity Badge */}
                       <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium ${severityColors[analysisResult.severity] || severityColors.low}`}>
                         {analysisResult.severity === "critical" || analysisResult.severity === "high" ? (
                           <AlertTriangle className="h-4 w-4" />
@@ -293,7 +272,6 @@ const Dashboard = () => {
                         Severity: {analysisResult.severity?.toUpperCase()}
                       </div>
 
-                      {/* Analysis */}
                       <div>
                         <h4 className="text-foreground font-semibold mb-2">Diagnosis</h4>
                         <p className="text-muted-foreground text-sm leading-relaxed">
@@ -303,7 +281,6 @@ const Dashboard = () => {
                         </p>
                       </div>
 
-                      {/* Recommendations */}
                       {analysisResult.recommendations?.length > 0 && (
                         <div>
                           <h4 className="text-foreground font-semibold mb-2">Recommendations</h4>
