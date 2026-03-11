@@ -226,7 +226,7 @@ const NearbyServices = () => {
                             <Badge
                               variant={place.isOpen ? "default" : "secondary"}
                               className={place.isOpen
-                                ? "bg-green-500/10 text-green-400 border-green-500/30 shrink-0"
+                                ? "bg-primary/10 text-primary border-primary/30 shrink-0"
                                 : "bg-muted text-muted-foreground shrink-0"
                               }
                             >
