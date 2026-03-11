@@ -2,3 +2,6 @@ project_id = "ayfwaazikrzjdllecepe"
 
 [functions.analyze-medical]
 verify_jwt = false
+
+[functions.nearby-places]
+verify_jwt = false
