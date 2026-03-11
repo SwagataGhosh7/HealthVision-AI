@@ -169,7 +169,13 @@ const Dashboard = () => {
             <Button
               key={id}
               variant={activeTab === id ? "default" : "outline"}
-              onClick={() => setActiveTab(id)}
+              onClick={() => {
+                if (id === "nearby") {
+                  navigate("/nearby");
+                } else {
+                  setActiveTab(id);
+                }
+              }}
               className={activeTab === id
                 ? "bg-gradient-accent text-accent-foreground glow"
                 : "border-border/60 text-muted-foreground"
