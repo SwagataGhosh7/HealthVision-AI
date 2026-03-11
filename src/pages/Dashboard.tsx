@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, Upload, FileText, HeartPulse, Brain, AlertTriangle,
-  CheckCircle, LogOut, TrendingUp
+  CheckCircle, LogOut, TrendingUp, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ const Dashboard = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [description, setDescription] = useState("");
-  const [activeTab, setActiveTab] = useState<"diagnose" | "vitals" | "history">("diagnose");
+  const [activeTab, setActiveTab] = useState<"diagnose" | "vitals" | "history" | "nearby">("diagnose");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -164,11 +164,18 @@ const Dashboard = () => {
             { id: "diagnose" as const, icon: Brain, label: "AI Diagnosis" },
             { id: "vitals" as const, icon: HeartPulse, label: "Vital Signs" },
             { id: "history" as const, icon: FileText, label: "History" },
+            { id: "nearby" as const, icon: MapPin, label: "Nearby Services" },
           ].map(({ id, icon: Icon, label }) => (
             <Button
               key={id}
               variant={activeTab === id ? "default" : "outline"}
-              onClick={() => setActiveTab(id)}
+              onClick={() => {
+                if (id === "nearby") {
+                  navigate("/nearby");
+                } else {
+                  setActiveTab(id);
+                }
+              }}
               className={activeTab === id
                 ? "bg-gradient-accent text-accent-foreground glow"
                 : "border-border/60 text-muted-foreground"
