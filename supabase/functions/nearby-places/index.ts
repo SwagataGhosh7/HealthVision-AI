@@ -23,28 +23,32 @@ serve(async (req) => {
       throw new Error("latitude, longitude, and type are required");
     }
 
-    const validTypes = ["hospital", "pharmacy"];
+    const validTypes = ["hospital", "pharmacy", "ambulance"];
     if (!validTypes.includes(type)) {
-      throw new Error("type must be 'hospital' or 'pharmacy'");
+      throw new Error("type must be 'hospital', 'pharmacy', or 'ambulance'");
     }
 
-    // Use keyword to narrow results for ambulance services
-    const keyword = type === "hospital" ? "ambulance emergency hospital" : "pharmacy drugstore";
-    const radius = 5000; // 5km radius
+    const placeType = type === "ambulance" ? "hospital" : type;
+    const keyword = type === "ambulance" ? "ambulance emergency" : type === "hospital" ? "hospital clinic" : "pharmacy drugstore chemist";
+    const radius = 10000;
 
-    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=${type}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=${placeType}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_API_KEY}`;
 
+    console.log("Fetching places from Google API for type:", type);
     const response = await fetch(url);
     const data = await response.json();
 
+    console.log("Google Places API status:", data.status, "Results:", data.results?.length || 0);
+
     if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-      throw new Error(`Google Places API error: ${data.status} - ${data.error_message || ""}`);
+      console.error("Google Places API error:", JSON.stringify(data));
+      throw new Error(`Google Places API error: ${data.status} - ${data.error_message || "Unknown error"}`);
     }
 
     const places = (data.results || []).map((place: any) => ({
       id: place.place_id,
       name: place.name,
-      address: place.vicinity,
+      address: place.vicinity || place.formatted_address || "Address unavailable",
       latitude: place.geometry.location.lat,
       longitude: place.geometry.location.lng,
       rating: place.rating || null,
@@ -57,6 +61,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: unknown) {
+    console.error("nearby-places error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,

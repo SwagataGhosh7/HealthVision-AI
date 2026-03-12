@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, Upload, FileText, HeartPulse, Brain, AlertTriangle,
-  CheckCircle, LogOut, TrendingUp, MapPin
+  CheckCircle, LogOut, TrendingUp, MapPin, Stethoscope
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,6 +165,7 @@ const Dashboard = () => {
             { id: "vitals" as const, icon: HeartPulse, label: "Vital Signs" },
             { id: "history" as const, icon: FileText, label: "History" },
             { id: "nearby" as const, icon: MapPin, label: "Nearby Services" },
+            { id: "tools" as const, icon: Stethoscope, label: "Medical Tools" },
           ].map(({ id, icon: Icon, label }) => (
             <Button
               key={id}
@@ -172,6 +173,8 @@ const Dashboard = () => {
               onClick={() => {
                 if (id === "nearby") {
                   navigate("/nearby");
+                } else if (id === "tools") {
+                  navigate("/medical-tools");
                 } else {
                   setActiveTab(id);
                 }
