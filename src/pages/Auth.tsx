@@ -151,36 +151,50 @@ const Auth = () => {
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="password" className="text-foreground text-sm">Password</Label>
-              <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="pl-10 pr-10 bg-secondary/30 border-border/60"
-                />
+            {!forgotPassword && (
+              <div>
+                <Label htmlFor="password" className="text-foreground text-sm">Password</Label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="pl-10 pr-10 bg-secondary/30 border-border/60"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isLogin && !forgotPassword && (
+              <div className="text-right">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setForgotPassword(true)}
+                  className="text-xs text-primary hover:underline"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  Forgot password?
                 </button>
               </div>
-            </div>
+            )}
 
             <Button
               type="submit"
               disabled={loading}
               className="w-full bg-gradient-accent text-accent-foreground glow hover:opacity-90"
             >
-              {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
+              {loading ? "Please wait..." : forgotPassword ? "Send Reset Link" : isLogin ? "Sign In" : "Create Account"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>
