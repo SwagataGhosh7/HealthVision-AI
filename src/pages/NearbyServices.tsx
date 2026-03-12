@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Activity, MapPin, Phone, Star, Navigation, Loader2,
-  Ambulance, Pill, ArrowLeft, RefreshCw,
+  Activity, MapPin, Star, Navigation, Loader2,
+  Ambulance, Pill, ArrowLeft, RefreshCw, Hospital, LocateFixed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -21,79 +21,113 @@ interface Place {
   rating: number | null;
   totalRatings: number;
   isOpen: boolean | null;
-  type: "hospital" | "pharmacy";
+  type: "hospital" | "pharmacy" | "ambulance";
 }
 
+type ServiceType = "hospital" | "pharmacy" | "ambulance";
+
 const NearbyServices = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeType, setActiveType] = useState<"hospital" | "pharmacy">("hospital");
+  const [activeType, setActiveType] = useState<ServiceType>("hospital");
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [manualAddress, setManualAddress] = useState("");
+  const [gettingLocation, setGettingLocation] = useState(false);
 
-  // Get user location
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (err) => setLocationError(`Location access denied: ${err.message}`),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }, []);
-
-  // Load Google Maps script
-  useEffect(() => {
-    if (document.getElementById("google-maps-script")) {
-      setMapLoaded(true);
-      return;
-    }
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    // We'll load the maps script with the key from a meta tag or just use a basic map
-    // Since the API key is server-side, we'll use an iframe approach
-    setMapLoaded(true);
-  }, []);
-
-  const fetchPlaces = useCallback(async () => {
-    if (!location) return;
+  const fetchPlaces = useCallback(async (lat: number, lng: number, type: ServiceType) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("nearby-places", {
-        body: { latitude: location.lat, longitude: location.lng, type: activeType },
+        body: { latitude: lat, longitude: lng, type },
       });
       if (error) throw error;
       setPlaces(data.places || []);
       if ((data.places || []).length === 0) {
-        toast.info("No results found nearby. Try expanding your search area.");
+        toast.info("No results found nearby. Try a different location or category.");
       }
     } catch (err: any) {
+      console.error("Fetch places error:", err);
       toast.error(err.message || "Failed to fetch nearby places");
     } finally {
       setLoading(false);
     }
-  }, [location, activeType]);
+  }, []);
 
-  useEffect(() => {
-    if (location) fetchPlaces();
-  }, [location, activeType, fetchPlaces]);
+  const getGPSLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      return;
+    }
+    setGettingLocation(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setLocation(loc);
+        setGettingLocation(false);
+        toast.success("Location detected!");
+        fetchPlaces(loc.lat, loc.lng, activeType);
+      },
+      (err) => {
+        setLocationError(`Location access denied: ${err.message}`);
+        setGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  };
+
+  const handleManualSearch = async () => {
+    if (!manualAddress.trim()) {
+      toast.error("Please enter a location");
+      return;
+    }
+    setLoading(true);
+    setLocationError(null);
+    try {
+      // Use a simple geocoding approach via the Nominatim API (free, no key needed)
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress)}&limit=1`
+      );
+      const results = await res.json();
+      if (!results.length) {
+        toast.error("Location not found. Try a more specific address.");
+        setLoading(false);
+        return;
+      }
+      const loc = { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
+      setLocation(loc);
+      toast.success(`Found: ${results[0].display_name.split(",").slice(0, 2).join(",")}`);
+      fetchPlaces(loc.lat, loc.lng, activeType);
+    } catch {
+      toast.error("Failed to geocode address");
+      setLoading(false);
+    }
+  };
+
+  const handleTypeChange = (type: ServiceType) => {
+    setActiveType(type);
+    if (location) fetchPlaces(location.lat, location.lng, type);
+  };
 
   const getDirectionsUrl = (place: Place) =>
     `https://www.google.com/maps/dir/?api=1&origin=${location?.lat},${location?.lng}&destination=${place.latitude},${place.longitude}&travelmode=driving`;
 
   const getMapEmbedUrl = () => {
     if (!location) return "";
-    const q = activeType === "hospital" ? "ambulance+emergency+hospital" : "pharmacy+drugstore";
-    return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${q}&center=${location.lat},${location.lng}&zoom=14`;
+    const q = activeType === "hospital" ? "hospital+clinic" : activeType === "ambulance" ? "ambulance+emergency" : "pharmacy+drugstore";
+    return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${q}&center=${location.lat},${location.lng}&zoom=13`;
   };
+
+  const serviceOptions = [
+    { id: "hospital" as const, icon: Hospital, label: "Hospitals" },
+    { id: "ambulance" as const, icon: Ambulance, label: "Ambulance" },
+    { id: "pharmacy" as const, icon: Pill, label: "Pharmacies" },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
       <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80 sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between h-16 px-4">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
@@ -112,24 +146,59 @@ const NearbyServices = () => {
 
       <div className="container mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-2xl font-bold text-foreground mb-1">
-            Nearby Emergency Services
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1">Nearby Medical Services</h1>
           <p className="text-muted-foreground text-sm mb-6">
-            Find the nearest ambulance services and pharmacies in real-time using GPS
+            Find hospitals, ambulance services, and pharmacies near you
           </p>
         </motion.div>
 
+        {/* Location Input */}
+        <Card className="bg-card border-border/60 mb-6">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={getGPSLocation}
+                disabled={gettingLocation}
+                className="bg-gradient-accent text-accent-foreground glow hover:opacity-90"
+              >
+                {gettingLocation ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <LocateFixed className="h-4 w-4 mr-2" />
+                )}
+                {gettingLocation ? "Detecting..." : "Use My GPS Location"}
+              </Button>
+              <div className="flex-1 flex gap-2">
+                <Input
+                  placeholder="Or type a city / address (e.g., New York, Mumbai)"
+                  value={manualAddress}
+                  onChange={(e) => setManualAddress(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
+                  className="bg-secondary/30 border-border/60"
+                />
+                <Button variant="outline" onClick={handleManualSearch} disabled={loading} className="border-border/60">
+                  <MapPin className="h-4 w-4 mr-1" /> Search
+                </Button>
+              </div>
+            </div>
+            {locationError && (
+              <p className="text-destructive text-xs mt-2">{locationError}</p>
+            )}
+            {location && (
+              <p className="text-primary text-xs mt-2">
+                📍 Location set: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Type Toggle */}
         <div className="flex gap-2 mb-6">
-          {[
-            { id: "hospital" as const, icon: Ambulance, label: "Ambulance & Hospitals" },
-            { id: "pharmacy" as const, icon: Pill, label: "Pharmacies" },
-          ].map(({ id, icon: Icon, label }) => (
+          {serviceOptions.map(({ id, icon: Icon, label }) => (
             <Button
               key={id}
               variant={activeType === id ? "default" : "outline"}
-              onClick={() => setActiveType(id)}
+              onClick={() => handleTypeChange(id)}
               className={activeType === id
                 ? "bg-gradient-accent text-accent-foreground glow"
                 : "border-border/60 text-muted-foreground"
@@ -138,39 +207,34 @@ const NearbyServices = () => {
               <Icon className="h-4 w-4 mr-2" /> {label}
             </Button>
           ))}
-          <Button variant="outline" size="icon" onClick={fetchPlaces} disabled={loading || !location}
-            className="border-border/60 text-muted-foreground ml-auto">
+          <Button
+            variant="outline" size="icon"
+            onClick={() => location && fetchPlaces(location.lat, location.lng, activeType)}
+            disabled={loading || !location}
+            className="border-border/60 text-muted-foreground ml-auto"
+          >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
         </div>
 
-        {locationError ? (
+        {!location ? (
           <Card className="bg-card border-border/60">
             <CardContent className="py-12 text-center">
-              <MapPin className="h-12 w-12 text-destructive mx-auto mb-3" />
-              <p className="text-foreground font-medium">Location Access Required</p>
-              <p className="text-muted-foreground text-sm mt-1">{locationError}</p>
-              <p className="text-muted-foreground text-xs mt-2">
-                Please enable location permissions in your browser settings and refresh.
+              <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-foreground font-medium">Set Your Location</p>
+              <p className="text-muted-foreground text-sm mt-1">
+                Use GPS or type an address above to find nearby medical services
               </p>
-            </CardContent>
-          </Card>
-        ) : !location ? (
-          <Card className="bg-card border-border/60">
-            <CardContent className="py-12 text-center">
-              <Loader2 className="h-12 w-12 text-primary mx-auto mb-3 animate-spin" />
-              <p className="text-foreground font-medium">Getting your location...</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid lg:grid-cols-5 gap-6">
-            {/* Map */}
             <motion.div className="lg:col-span-3" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
               <Card className="bg-card border-border/60 overflow-hidden">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-foreground text-sm flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-primary" />
-                    Live Map — {activeType === "hospital" ? "Ambulance & Hospitals" : "Pharmacies"}
+                    Live Map
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -185,16 +249,13 @@ const NearbyServices = () => {
               </Card>
             </motion.div>
 
-            {/* List */}
             <motion.div className="lg:col-span-2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               <Card className="bg-card border-border/60">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-foreground text-sm flex items-center gap-2">
-                    {activeType === "hospital" ? (
-                      <Ambulance className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Pill className="h-4 w-4 text-primary" />
-                    )}
+                    {serviceOptions.find(s => s.id === activeType) &&
+                      (() => { const S = serviceOptions.find(s => s.id === activeType)!; return <S.icon className="h-4 w-4 text-primary" />; })()
+                    }
                     {loading ? "Searching..." : `${places.length} Found Nearby`}
                   </CardTitle>
                 </CardHeader>
@@ -205,7 +266,7 @@ const NearbyServices = () => {
                     </div>
                   ) : places.length === 0 ? (
                     <p className="text-muted-foreground text-sm text-center py-8">
-                      No {activeType === "hospital" ? "ambulance services" : "pharmacies"} found nearby.
+                      No results found. Try searching a different location.
                     </p>
                   ) : (
                     places.map((place) => (
@@ -215,12 +276,8 @@ const NearbyServices = () => {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <h4 className="text-foreground text-sm font-medium truncate">
-                              {place.name}
-                            </h4>
-                            <p className="text-muted-foreground text-xs mt-0.5 truncate">
-                              {place.address}
-                            </p>
+                            <h4 className="text-foreground text-sm font-medium truncate">{place.name}</h4>
+                            <p className="text-muted-foreground text-xs mt-0.5 truncate">{place.address}</p>
                           </div>
                           {place.isOpen !== null && (
                             <Badge
@@ -241,12 +298,7 @@ const NearbyServices = () => {
                               {place.rating} ({place.totalRatings})
                             </span>
                           )}
-                          <a
-                            href={getDirectionsUrl(place)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ml-auto"
-                          >
+                          <a href={getDirectionsUrl(place)} target="_blank" rel="noopener noreferrer" className="ml-auto">
                             <Button size="sm" variant="outline" className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/10">
                               <Navigation className="h-3 w-3 mr-1" /> Directions
                             </Button>
