@@ -94,7 +94,7 @@ const Auth = () => {
 
         <div className="bg-card border border-border/60 rounded-2xl p-8">
           <h2 className="text-xl font-bold text-foreground mb-6 text-center">
-            {isLogin ? "Sign In" : "Create Account"}
+            {forgotPassword ? "Reset Password" : isLogin ? "Sign In" : "Create Account"}
           </h2>
 
           <Button
