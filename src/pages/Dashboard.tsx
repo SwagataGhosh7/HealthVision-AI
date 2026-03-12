@@ -173,6 +173,8 @@ const Dashboard = () => {
               onClick={() => {
                 if (id === "nearby") {
                   navigate("/nearby");
+                } else if (id === "tools") {
+                  navigate("/medical-tools");
                 } else {
                   setActiveTab(id);
                 }

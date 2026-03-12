@@ -8,8 +8,10 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NearbyServices from "./pages/NearbyServices";
+import MedicalTools from "./pages/MedicalTools";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import HealthChatbot from "./components/HealthChatbot";
 
 const queryClient = new QueryClient();
 
@@ -33,8 +35,10 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/nearby" element={<ProtectedRoute><NearbyServices /></ProtectedRoute>} />
+            <Route path="/medical-tools" element={<ProtectedRoute><MedicalTools /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <HealthChatbot />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
