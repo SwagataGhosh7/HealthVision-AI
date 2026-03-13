@@ -166,6 +166,7 @@ const Dashboard = () => {
             { id: "history" as const, icon: FileText, label: "History" },
             { id: "nearby" as const, icon: MapPin, label: "Nearby Services" },
             { id: "tools" as const, icon: Stethoscope, label: "Medical Tools" },
+            { id: "profile" as const, icon: UserCog, label: "Profile" },
           ].map(({ id, icon: Icon, label }) => (
             <Button
               key={id}
