@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, Upload, FileText, HeartPulse, Brain, AlertTriangle,
-  CheckCircle, LogOut, TrendingUp, MapPin, Stethoscope
+  CheckCircle, LogOut, TrendingUp, MapPin, Stethoscope, UserCog
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
