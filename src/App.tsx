@@ -15,6 +15,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import HealthChatbot from "./components/HealthChatbot";
+import SOSButton from "./components/SOSButton";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <HealthChatbot />
+          <SOSButton />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

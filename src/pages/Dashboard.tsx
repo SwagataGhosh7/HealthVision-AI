@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import VitalSignsPanel from "@/components/dashboard/VitalSignsPanel";
 import DiagnosisHistory from "@/components/dashboard/DiagnosisHistory";
+import QuickStatsCards from "@/components/dashboard/QuickStatsCards";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -191,6 +192,8 @@ const Dashboard = () => {
             </Button>
           ))}
         </div>
+
+        <QuickStatsCards />
 
         {activeTab === "diagnose" && (
           <div className="grid lg:grid-cols-2 gap-8">
