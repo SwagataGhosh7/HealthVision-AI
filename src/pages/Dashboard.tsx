@@ -176,6 +176,8 @@ const Dashboard = () => {
                   navigate("/nearby");
                 } else if (id === "tools") {
                   navigate("/medical-tools");
+                } else if (id === "profile") {
+                  navigate("/profile");
                 } else {
                   setActiveTab(id);
                 }

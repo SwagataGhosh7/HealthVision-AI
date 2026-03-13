@@ -69,11 +69,9 @@ const Navbar = () => {
           className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl"
         >
           <div className="container mx-auto px-4 py-4 flex flex-col gap-3">
-            {["Features", "Diagnostics", "Research", "Contact"].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="text-sm text-muted-foreground py-2">
-                {item}
-              </a>
-            ))}
+            <a href="#features" className="text-sm text-muted-foreground py-2">Features</a>
+            <a href="#stats" className="text-sm text-muted-foreground py-2">Diagnostics</a>
+            <a href="https://www.instagram.com/healthvision_india/?utm_source=ig_web_button_share_sheet" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground py-2">Contact</a>
             {user ? (
               <Button size="sm" className="bg-gradient-accent text-accent-foreground mt-2" onClick={() => navigate("/dashboard")}>Dashboard</Button>
             ) : (

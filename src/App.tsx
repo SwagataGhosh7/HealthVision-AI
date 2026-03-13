@@ -10,6 +10,9 @@ import Dashboard from "./pages/Dashboard";
 import NearbyServices from "./pages/NearbyServices";
 import MedicalTools from "./pages/MedicalTools";
 import ResetPassword from "./pages/ResetPassword";
+import ProfileSettings from "./pages/ProfileSettings";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import HealthChatbot from "./components/HealthChatbot";
 
@@ -33,9 +36,12 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/nearby" element={<ProtectedRoute><NearbyServices /></ProtectedRoute>} />
             <Route path="/medical-tools" element={<ProtectedRoute><MedicalTools /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <HealthChatbot />
