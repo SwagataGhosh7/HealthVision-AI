@@ -173,32 +173,42 @@ const VitalSignsPanel = () => {
       )}
 
       {/* Heart Rate Chart */}
-      {vitals.length > 1 && (
-        <Card className="bg-card border-border/60">
-          <CardHeader>
-            <CardTitle className="text-foreground text-lg">Heart Rate Trend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={vitals.filter(v => v.heart_rate)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 20% 18%)" />
-                <XAxis
-                  dataKey="recorded_at"
-                  tickFormatter={(v) => new Date(v).toLocaleDateString()}
-                  stroke="hsl(215 15% 55%)"
-                  fontSize={12}
-                />
-                <YAxis stroke="hsl(215 15% 55%)" fontSize={12} />
-                <Tooltip
-                  contentStyle={{ background: "hsl(220 25% 10%)", border: "1px solid hsl(220 20% 18%)", borderRadius: "8px" }}
-                  labelStyle={{ color: "hsl(195 100% 95%)" }}
-                />
-                <Line type="monotone" dataKey="heart_rate" stroke="hsl(180 70% 45%)" strokeWidth={2} dot={{ fill: "hsl(180 70% 45%)" }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
+      {vitals.length > 0 && (() => {
+        const heartRateData = vitals.filter(v => v.heart_rate);
+        return heartRateData.length > 1 ? (
+          <Card className="bg-card border-border/60">
+            <CardHeader>
+              <CardTitle className="text-foreground text-lg">Heart Rate Trend</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={heartRateData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 20% 18%)" />
+                  <XAxis
+                    dataKey="recorded_at"
+                    tickFormatter={(v) => new Date(v).toLocaleDateString()}
+                    stroke="hsl(215 15% 55%)"
+                    fontSize={12}
+                  />
+                  <YAxis stroke="hsl(215 15% 55%)" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{ background: "hsl(220 25% 10%)", border: "1px solid hsl(220 20% 18%)", borderRadius: "8px" }}
+                    labelStyle={{ color: "hsl(195 100% 95%)" }}
+                  />
+                  <Line type="monotone" dataKey="heart_rate" stroke="hsl(180 70% 45%)" strokeWidth={2} dot={{ fill: "hsl(180 70% 45%)" }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="bg-card border-border/60">
+            <CardContent className="py-8 text-center">
+              <HeartPulse className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-muted-foreground text-sm">Record at least 2 heart rate readings to see the trend chart</p>
+            </CardContent>
+          </Card>
+        );
+      })()}
     </motion.div>
   );
 };
