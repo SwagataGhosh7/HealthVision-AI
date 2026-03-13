@@ -12,11 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY");
-    if (!GOOGLE_MAPS_API_KEY) {
-      throw new Error("GOOGLE_MAPS_API_KEY is not configured");
-    }
-
     const { latitude, longitude, type } = await req.json();
 
     if (!latitude || !longitude || !type) {
@@ -28,34 +23,92 @@ serve(async (req) => {
       throw new Error("type must be 'hospital', 'pharmacy', or 'ambulance'");
     }
 
-    const placeType = type === "ambulance" ? "hospital" : type;
-    const keyword = type === "ambulance" ? "ambulance emergency" : type === "hospital" ? "hospital clinic" : "pharmacy drugstore chemist";
-    const radius = 10000;
+    // Use Overpass API (OpenStreetMap) - completely free, no API key needed
+    const radius = 10000; // 10km
+    let query = "";
 
-    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=${placeType}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_API_KEY}`;
-
-    console.log("Fetching places from Google API for type:", type);
-    const response = await fetch(url);
-    const data = await response.json();
-
-    console.log("Google Places API status:", data.status, "Results:", data.results?.length || 0);
-
-    if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-      console.error("Google Places API error:", JSON.stringify(data));
-      throw new Error(`Google Places API error: ${data.status} - ${data.error_message || "Unknown error"}`);
+    if (type === "hospital") {
+      query = `
+        [out:json][timeout:25];
+        (
+          node["amenity"="hospital"](around:${radius},${latitude},${longitude});
+          node["amenity"="clinic"](around:${radius},${latitude},${longitude});
+          way["amenity"="hospital"](around:${radius},${latitude},${longitude});
+          way["amenity"="clinic"](around:${radius},${latitude},${longitude});
+        );
+        out center 20;
+      `;
+    } else if (type === "pharmacy") {
+      query = `
+        [out:json][timeout:25];
+        (
+          node["amenity"="pharmacy"](around:${radius},${latitude},${longitude});
+          node["shop"="chemist"](around:${radius},${latitude},${longitude});
+          way["amenity"="pharmacy"](around:${radius},${latitude},${longitude});
+        );
+        out center 20;
+      `;
+    } else {
+      // ambulance - search for emergency services
+      query = `
+        [out:json][timeout:25];
+        (
+          node["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});
+          node["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude});
+          way["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});
+          way["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude});
+        );
+        out center 20;
+      `;
     }
 
-    const places = (data.results || []).map((place: any) => ({
-      id: place.place_id,
-      name: place.name,
-      address: place.vicinity || place.formatted_address || "Address unavailable",
-      latitude: place.geometry.location.lat,
-      longitude: place.geometry.location.lng,
-      rating: place.rating || null,
-      totalRatings: place.user_ratings_total || 0,
-      isOpen: place.opening_hours?.open_now ?? null,
-      type,
-    }));
+    console.log("Querying Overpass API for type:", type);
+    const response = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: `data=${encodeURIComponent(query)}`,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Overpass API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Overpass results:", data.elements?.length || 0);
+
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    const places = (data.elements || [])
+      .map((el: any) => {
+        const lat = el.lat || el.center?.lat;
+        const lon = el.lon || el.center?.lon;
+        if (!lat || !lon) return null;
+        const name = el.tags?.name || el.tags?.["name:en"] || `${type.charAt(0).toUpperCase() + type.slice(1)}`;
+        const address = [el.tags?.["addr:street"], el.tags?.["addr:city"], el.tags?.["addr:postcode"]].filter(Boolean).join(", ") || "Address not available";
+        const distance = haversine(latitude, longitude, lat, lon);
+
+        return {
+          id: String(el.id),
+          name,
+          address,
+          latitude: lat,
+          longitude: lon,
+          rating: null,
+          totalRatings: 0,
+          isOpen: null,
+          type,
+          distance: Math.round(distance * 10) / 10,
+        };
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => a.distance - b.distance);
 
     return new Response(JSON.stringify({ places }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

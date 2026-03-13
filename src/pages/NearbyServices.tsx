@@ -1,13 +1,12 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Activity, MapPin, Star, Navigation, Loader2,
+  Activity, MapPin, Navigation, Loader2,
   Ambulance, Pill, ArrowLeft, RefreshCw, Hospital, LocateFixed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -22,6 +21,7 @@ interface Place {
   totalRatings: number;
   isOpen: boolean | null;
   type: "hospital" | "pharmacy" | "ambulance";
+  distance?: number;
 }
 
 type ServiceType = "hospital" | "pharmacy" | "ambulance";
@@ -49,7 +49,7 @@ const NearbyServices = () => {
       }
     } catch (err: any) {
       console.error("Fetch places error:", err);
-      toast.error(err.message || "Failed to fetch nearby places");
+      toast.error("Failed to fetch nearby places. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,6 @@ const NearbyServices = () => {
     setLoading(true);
     setLocationError(null);
     try {
-      // Use a simple geocoding approach via the Nominatim API (free, no key needed)
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress)}&limit=1`
       );
@@ -114,10 +113,9 @@ const NearbyServices = () => {
   const getDirectionsUrl = (place: Place) =>
     `https://www.google.com/maps/dir/?api=1&origin=${location?.lat},${location?.lng}&destination=${place.latitude},${place.longitude}&travelmode=driving`;
 
-  const getMapEmbedUrl = () => {
+  const getOSMMapUrl = () => {
     if (!location) return "";
-    const q = activeType === "hospital" ? "hospital+clinic" : activeType === "ambulance" ? "ambulance+emergency" : "pharmacy+drugstore";
-    return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${q}&center=${location.lat},${location.lng}&zoom=13`;
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${location.lng - 0.08},${location.lat - 0.06},${location.lng + 0.08},${location.lat + 0.06}&layer=mapnik&marker=${location.lat},${location.lng}`;
   };
 
   const serviceOptions = [
@@ -152,7 +150,6 @@ const NearbyServices = () => {
           </p>
         </motion.div>
 
-        {/* Location Input */}
         <Card className="bg-card border-border/60 mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -181,9 +178,7 @@ const NearbyServices = () => {
                 </Button>
               </div>
             </div>
-            {locationError && (
-              <p className="text-destructive text-xs mt-2">{locationError}</p>
-            )}
+            {locationError && <p className="text-destructive text-xs mt-2">{locationError}</p>}
             {location && (
               <p className="text-primary text-xs mt-2">
                 📍 Location set: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
@@ -192,7 +187,6 @@ const NearbyServices = () => {
           </CardContent>
         </Card>
 
-        {/* Type Toggle */}
         <div className="flex gap-2 mb-6">
           {serviceOptions.map(({ id, icon: Icon, label }) => (
             <Button
@@ -241,8 +235,7 @@ const NearbyServices = () => {
                   <iframe
                     className="w-full h-[450px] border-0"
                     loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={getMapEmbedUrl()}
+                    src={getOSMMapUrl()}
                     allowFullScreen
                   />
                 </CardContent>
@@ -279,25 +272,13 @@ const NearbyServices = () => {
                             <h4 className="text-foreground text-sm font-medium truncate">{place.name}</h4>
                             <p className="text-muted-foreground text-xs mt-0.5 truncate">{place.address}</p>
                           </div>
-                          {place.isOpen !== null && (
-                            <Badge
-                              variant={place.isOpen ? "default" : "secondary"}
-                              className={place.isOpen
-                                ? "bg-primary/10 text-primary border-primary/30 shrink-0"
-                                : "bg-muted text-muted-foreground shrink-0"
-                              }
-                            >
-                              {place.isOpen ? "Open" : "Closed"}
-                            </Badge>
+                          {place.distance != null && (
+                            <span className="text-xs text-primary shrink-0 font-medium">
+                              {place.distance} km
+                            </span>
                           )}
                         </div>
                         <div className="flex items-center gap-3 mt-2">
-                          {place.rating && (
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-                              {place.rating} ({place.totalRatings})
-                            </span>
-                          )}
                           <a href={getDirectionsUrl(place)} target="_blank" rel="noopener noreferrer" className="ml-auto">
                             <Button size="sm" variant="outline" className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/10">
                               <Navigation className="h-3 w-3 mr-1" /> Directions
