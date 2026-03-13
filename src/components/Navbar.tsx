@@ -28,15 +28,16 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-8">
-          {["Features", "Diagnostics", "Research", "Contact"].map((item) => (
-            <a
-              key={item}
-              href={`#${item.toLowerCase()}`}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {item}
-            </a>
-          ))}
+          <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
+          <a href="#stats" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Diagnostics</a>
+          <a
+            href="https://www.instagram.com/healthvision_india/?utm_source=ig_web_button_share_sheet"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Contact
+          </a>
         </div>
 
         <div className="hidden md:flex items-center gap-3">
