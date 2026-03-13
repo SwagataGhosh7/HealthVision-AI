@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import VitalSignsPanel from "@/components/dashboard/VitalSignsPanel";
 import DiagnosisHistory from "@/components/dashboard/DiagnosisHistory";
+import QuickStatsCards from "@/components/dashboard/QuickStatsCards";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
