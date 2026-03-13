@@ -45,7 +45,7 @@ const testimonials = [
 
 const HealthTipsSection = () => {
   const [currentTip, setCurrentTip] = useState(0);
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  
 
   useEffect(() => {
     const interval = setInterval(() => {
