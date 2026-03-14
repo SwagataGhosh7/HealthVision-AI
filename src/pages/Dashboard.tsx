@@ -180,6 +180,8 @@ const Dashboard = () => {
                   navigate("/medical-tools");
                 } else if (id === "profile") {
                   navigate("/profile");
+                } else if (id === "book") {
+                  navigate("/book-doctor");
                 } else {
                   setActiveTab(id);
                 }

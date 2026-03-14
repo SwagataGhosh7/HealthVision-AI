@@ -60,6 +60,10 @@ serve(async (req) => {
       clearTimeout(timeout);
     }
 
+    if (!response.ok) {
+      throw new Error(`Overpass API error: ${response.status}`);
+    }
+
     const data = await response.json();
     console.log("Overpass results:", data.elements?.length || 0);
 
