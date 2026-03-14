@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Activity, Menu, X } from "lucide-react";
+import { Activity, Menu, X, Sun, Moon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/hooks/use-theme";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
