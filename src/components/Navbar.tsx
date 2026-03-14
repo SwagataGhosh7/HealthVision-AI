@@ -43,6 +43,9 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" onClick={toggleTheme}>
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
           {user ? (
             <Button size="sm" className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity" onClick={() => navigate("/dashboard")}>
               Dashboard
