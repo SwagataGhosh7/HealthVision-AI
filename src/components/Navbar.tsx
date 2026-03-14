@@ -77,6 +77,10 @@ const Navbar = () => {
             <a href="#features" className="text-sm text-muted-foreground py-2">Features</a>
             <a href="#stats" className="text-sm text-muted-foreground py-2">Diagnostics</a>
             <a href="https://www.instagram.com/healthvision_india/?utm_source=ig_web_button_share_sheet" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground py-2">Contact</a>
+            <Button variant="ghost" size="sm" className="justify-start text-muted-foreground" onClick={toggleTheme}>
+              {theme === "dark" ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </Button>
             {user ? (
               <Button size="sm" className="bg-gradient-accent text-accent-foreground mt-2" onClick={() => navigate("/dashboard")}>Dashboard</Button>
             ) : (
