@@ -168,6 +168,7 @@ const Dashboard = () => {
             { id: "nearby" as const, icon: MapPin, label: "Nearby Services" },
             { id: "tools" as const, icon: Stethoscope, label: "Medical Tools" },
             { id: "profile" as const, icon: UserCog, label: "Profile" },
+            { id: "book" as const, icon: CalendarPlus, label: "Book Doctor" },
           ].map(({ id, icon: Icon, label }) => (
             <Button
               key={id}
