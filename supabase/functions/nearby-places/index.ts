@@ -24,42 +24,15 @@ serve(async (req) => {
     }
 
     // Use Overpass API (OpenStreetMap) - completely free, no API key needed
-    const radius = 10000; // 10km
+    const radius = 15000; // 15km for better results
     let query = "";
 
     if (type === "hospital") {
-      query = `
-        [out:json][timeout:25];
-        (
-          node["amenity"="hospital"](around:${radius},${latitude},${longitude});
-          node["amenity"="clinic"](around:${radius},${latitude},${longitude});
-          way["amenity"="hospital"](around:${radius},${latitude},${longitude});
-          way["amenity"="clinic"](around:${radius},${latitude},${longitude});
-        );
-        out center 20;
-      `;
+      query = `[out:json][timeout:60];(node["amenity"="hospital"](around:${radius},${latitude},${longitude});node["amenity"="clinic"](around:${radius},${latitude},${longitude});way["amenity"="hospital"](around:${radius},${latitude},${longitude});way["amenity"="clinic"](around:${radius},${latitude},${longitude}););out center 25;`;
     } else if (type === "pharmacy") {
-      query = `
-        [out:json][timeout:25];
-        (
-          node["amenity"="pharmacy"](around:${radius},${latitude},${longitude});
-          node["shop"="chemist"](around:${radius},${latitude},${longitude});
-          way["amenity"="pharmacy"](around:${radius},${latitude},${longitude});
-        );
-        out center 20;
-      `;
+      query = `[out:json][timeout:60];(node["amenity"="pharmacy"](around:${radius},${latitude},${longitude});node["shop"="chemist"](around:${radius},${latitude},${longitude});way["amenity"="pharmacy"](around:${radius},${latitude},${longitude}););out center 25;`;
     } else {
-      // ambulance - search for emergency services
-      query = `
-        [out:json][timeout:25];
-        (
-          node["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});
-          node["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude});
-          way["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});
-          way["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude});
-        );
-        out center 20;
-      `;
+      query = `[out:json][timeout:60];(node["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});node["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude});way["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});way["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude}););out center 25;`;
     }
 
     console.log("Querying Overpass API for type:", type);
