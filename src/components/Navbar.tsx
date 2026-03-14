@@ -1,14 +1,16 @@
 import { motion } from "framer-motion";
-import { Activity, Menu, X } from "lucide-react";
+import { Activity, Menu, X, Sun, Moon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/hooks/use-theme";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <motion.nav
@@ -41,6 +43,9 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" onClick={toggleTheme}>
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
           {user ? (
             <Button size="sm" className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity" onClick={() => navigate("/dashboard")}>
               Dashboard
@@ -72,6 +77,10 @@ const Navbar = () => {
             <a href="#features" className="text-sm text-muted-foreground py-2">Features</a>
             <a href="#stats" className="text-sm text-muted-foreground py-2">Diagnostics</a>
             <a href="https://www.instagram.com/healthvision_india/?utm_source=ig_web_button_share_sheet" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground py-2">Contact</a>
+            <Button variant="ghost" size="sm" className="justify-start text-muted-foreground" onClick={toggleTheme}>
+              {theme === "dark" ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </Button>
             {user ? (
               <Button size="sm" className="bg-gradient-accent text-accent-foreground mt-2" onClick={() => navigate("/dashboard")}>Dashboard</Button>
             ) : (

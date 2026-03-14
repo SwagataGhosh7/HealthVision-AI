@@ -24,50 +24,41 @@ serve(async (req) => {
     }
 
     // Use Overpass API (OpenStreetMap) - completely free, no API key needed
-    const radius = 10000; // 10km
+    const radius = 15000; // 15km for better results
     let query = "";
 
     if (type === "hospital") {
-      query = `
-        [out:json][timeout:25];
-        (
-          node["amenity"="hospital"](around:${radius},${latitude},${longitude});
-          node["amenity"="clinic"](around:${radius},${latitude},${longitude});
-          way["amenity"="hospital"](around:${radius},${latitude},${longitude});
-          way["amenity"="clinic"](around:${radius},${latitude},${longitude});
-        );
-        out center 20;
-      `;
+      query = `[out:json][timeout:60];(node["amenity"="hospital"](around:${radius},${latitude},${longitude});node["amenity"="clinic"](around:${radius},${latitude},${longitude});way["amenity"="hospital"](around:${radius},${latitude},${longitude});way["amenity"="clinic"](around:${radius},${latitude},${longitude}););out center 25;`;
     } else if (type === "pharmacy") {
-      query = `
-        [out:json][timeout:25];
-        (
-          node["amenity"="pharmacy"](around:${radius},${latitude},${longitude});
-          node["shop"="chemist"](around:${radius},${latitude},${longitude});
-          way["amenity"="pharmacy"](around:${radius},${latitude},${longitude});
-        );
-        out center 20;
-      `;
+      query = `[out:json][timeout:60];(node["amenity"="pharmacy"](around:${radius},${latitude},${longitude});node["shop"="chemist"](around:${radius},${latitude},${longitude});way["amenity"="pharmacy"](around:${radius},${latitude},${longitude}););out center 25;`;
     } else {
-      // ambulance - search for emergency services
-      query = `
-        [out:json][timeout:25];
-        (
-          node["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});
-          node["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude});
-          way["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});
-          way["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude});
-        );
-        out center 20;
-      `;
+      query = `[out:json][timeout:60];(node["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});node["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude});way["emergency"="ambulance_station"](around:${radius},${latitude},${longitude});way["amenity"="hospital"]["emergency"="yes"](around:${radius},${latitude},${longitude}););out center 25;`;
     }
 
     console.log("Querying Overpass API for type:", type);
-    const response = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      body: `data=${encodeURIComponent(query)}`,
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    
+    let response: Response;
+    try {
+      response = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: `data=${encodeURIComponent(query)}`,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        signal: controller.signal,
+      });
+    } catch (fetchErr: any) {
+      // If primary server fails, try mirror
+      console.log("Primary Overpass failed, trying mirror...");
+      response = await fetch("https://lz4.overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: `data=${encodeURIComponent(query)}`,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       throw new Error(`Overpass API error: ${response.status}`);
