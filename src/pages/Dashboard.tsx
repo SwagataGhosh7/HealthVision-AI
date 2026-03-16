@@ -161,11 +161,12 @@ const Dashboard = () => {
       </nav>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex gap-2 mb-8">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 mb-8">
           {[
             { id: "diagnose" as const, icon: Brain, label: "AI Diagnosis" },
             { id: "vitals" as const, icon: HeartPulse, label: "Vital Signs" },
             { id: "history" as const, icon: FileText, label: "History" },
+            { id: "export" as const, icon: Download, label: "Export PDF" },
             { id: "nearby" as const, icon: MapPin, label: "Nearby Services" },
             { id: "tools" as const, icon: Stethoscope, label: "Medical Tools" },
             { id: "profile" as const, icon: UserCog, label: "Profile" },
@@ -174,6 +175,7 @@ const Dashboard = () => {
             <Button
               key={id}
               variant={activeTab === id ? "default" : "outline"}
+              size="sm"
               onClick={() => {
                 if (id === "nearby") {
                   navigate("/nearby");
@@ -187,10 +189,10 @@ const Dashboard = () => {
                   setActiveTab(id);
                 }
               }}
-              className={activeTab === id
+              className={`justify-start ${activeTab === id
                 ? "bg-gradient-accent text-accent-foreground glow"
                 : "border-border/60 text-muted-foreground"
-              }
+              }`}
             >
               <Icon className="h-4 w-4 mr-2" /> {label}
             </Button>
