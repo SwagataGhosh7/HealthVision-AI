@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, Upload, FileText, HeartPulse, Brain, AlertTriangle,
-  CheckCircle, LogOut, TrendingUp, MapPin, Stethoscope, UserCog, CalendarPlus
+  CheckCircle, LogOut, TrendingUp, MapPin, Stethoscope, UserCog, CalendarPlus, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import VitalSignsPanel from "@/components/dashboard/VitalSignsPanel";
 import DiagnosisHistory from "@/components/dashboard/DiagnosisHistory";
 import QuickStatsCards from "@/components/dashboard/QuickStatsCards";
+import ExportPDFReport from "@/components/dashboard/ExportPDFReport";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -24,7 +25,7 @@ const Dashboard = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [description, setDescription] = useState("");
-  const [activeTab, setActiveTab] = useState<"diagnose" | "vitals" | "history" | "nearby">("diagnose");
+  const [activeTab, setActiveTab] = useState<"diagnose" | "vitals" | "history" | "export" | "nearby">("diagnose");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,11 +161,12 @@ const Dashboard = () => {
       </nav>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex gap-2 mb-8">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 mb-8">
           {[
             { id: "diagnose" as const, icon: Brain, label: "AI Diagnosis" },
             { id: "vitals" as const, icon: HeartPulse, label: "Vital Signs" },
             { id: "history" as const, icon: FileText, label: "History" },
+            { id: "export" as const, icon: Download, label: "Export PDF" },
             { id: "nearby" as const, icon: MapPin, label: "Nearby Services" },
             { id: "tools" as const, icon: Stethoscope, label: "Medical Tools" },
             { id: "profile" as const, icon: UserCog, label: "Profile" },
@@ -173,6 +175,7 @@ const Dashboard = () => {
             <Button
               key={id}
               variant={activeTab === id ? "default" : "outline"}
+              size="sm"
               onClick={() => {
                 if (id === "nearby") {
                   navigate("/nearby");
@@ -186,10 +189,10 @@ const Dashboard = () => {
                   setActiveTab(id);
                 }
               }}
-              className={activeTab === id
+              className={`justify-start ${activeTab === id
                 ? "bg-gradient-accent text-accent-foreground glow"
                 : "border-border/60 text-muted-foreground"
-              }
+              }`}
             >
               <Icon className="h-4 w-4 mr-2" /> {label}
             </Button>
@@ -332,6 +335,7 @@ const Dashboard = () => {
 
         {activeTab === "vitals" && <VitalSignsPanel />}
         {activeTab === "history" && <DiagnosisHistory />}
+        {activeTab === "export" && <ExportPDFReport />}
       </div>
     </div>
   );
