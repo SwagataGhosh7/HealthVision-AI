@@ -25,7 +25,7 @@ const Dashboard = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [description, setDescription] = useState("");
-  const [activeTab, setActiveTab] = useState<"diagnose" | "vitals" | "history" | "nearby">("diagnose");
+  const [activeTab, setActiveTab] = useState<"diagnose" | "vitals" | "history" | "export" | "nearby">("diagnose");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
