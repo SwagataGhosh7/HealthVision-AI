@@ -335,6 +335,7 @@ const Dashboard = () => {
 
         {activeTab === "vitals" && <VitalSignsPanel />}
         {activeTab === "history" && <DiagnosisHistory />}
+        {activeTab === "export" && <ExportPDFReport />}
       </div>
     </div>
   );
