@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import VitalSignsPanel from "@/components/dashboard/VitalSignsPanel";
 import DiagnosisHistory from "@/components/dashboard/DiagnosisHistory";
 import QuickStatsCards from "@/components/dashboard/QuickStatsCards";
+import ExportPDFReport from "@/components/dashboard/ExportPDFReport";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
