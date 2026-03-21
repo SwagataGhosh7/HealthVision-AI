@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, ArrowLeft, Phone, Calendar, Clock, MapPin, Star,
-  Search, CheckCircle, User, Stethoscope,
+  Search, CheckCircle, User, Stethoscope, Upload, FileText, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,14 @@ interface Doctor {
   availableSlots: string[];
 }
 
+interface MedicalRecord {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  file: File;
+}
+
 const MOCK_DOCTORS: Doctor[] = [
   { id: "1", name: "Dr. Priya Sharma", specialty: "General Physician", phone: "+91 98765 43210", hospital: "Apollo Hospital, Delhi", rating: 4.8, experience: "15 years", available: true, fee: "₹500", availableSlots: ["10:00 AM", "11:30 AM", "2:00 PM", "4:30 PM"] },
   { id: "2", name: "Dr. Rajesh Kumar", specialty: "Cardiologist", phone: "+91 87654 32109", hospital: "AIIMS, New Delhi", rating: 4.9, experience: "20 years", available: true, fee: "₹1,200", availableSlots: ["9:00 AM", "12:00 PM", "3:00 PM"] },
@@ -45,6 +53,8 @@ const BookDoctor = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [booking, setBooking] = useState(false);
   const [booked, setBooked] = useState(false);
+  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const filteredDoctors = MOCK_DOCTORS.filter(
     (d) =>
@@ -57,20 +67,43 @@ const BookDoctor = () => {
     if (!selectedDoctor || !selectedSlot || !selectedDate || !user) return;
     setBooking(true);
     try {
+      // Upload medical records first if any
+      let recordUrls: string[] = [];
+      if (medicalRecords.length > 0) {
+        setUploading(true);
+        for (const record of medicalRecords) {
+          const fileName = `${user.id}/${Date.now()}-${record.name}`;
+          const { data, error } = await supabase.storage
+            .from('medical-records')
+            .upload(fileName, record.file);
+          
+          if (error) throw error;
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('medical-records')
+            .getPublicUrl(fileName);
+          
+          recordUrls.push(publicUrl);
+        }
+        setUploading(false);
+      }
+
       // Save appointment as a diagnosis entry for tracking
       await supabase.from("diagnoses").insert({
         user_id: user.id,
         title: `Appointment: ${selectedDoctor.name}`,
-        description: `${selectedDoctor.specialty} at ${selectedDoctor.hospital}\nDate: ${selectedDate}, Time: ${selectedSlot}\nPhone: ${selectedDoctor.phone}`,
+        description: `${selectedDoctor.specialty} at ${selectedDoctor.hospital}\nDate: ${selectedDate}, Time: ${selectedSlot}\nPhone: ${selectedDoctor.phone}${recordUrls.length > 0 ? '\n\nMedical Records: ' + recordUrls.join(', ') : ''}`,
         status: "scheduled",
         severity: "low",
+        medical_records: recordUrls,
       });
       setBooked(true);
-      toast.success(`Appointment booked with ${selectedDoctor.name}!`);
+      toast.success(`Appointment booked with ${selectedDoctor.name}!${medicalRecords.length > 0 ? ` (${medicalRecords.length} medical records uploaded)` : ''}`);
     } catch (err: any) {
-      toast.error("Failed to book appointment");
+      toast.error(err.message || "Failed to book appointment");
     } finally {
       setBooking(false);
+      setUploading(false);
     }
   };
 
@@ -79,6 +112,49 @@ const BookDoctor = () => {
     setSelectedSlot(null);
     setSelectedDate("");
     setBooked(false);
+    setMedicalRecords([]);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'text/plain'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    files.forEach(file => {
+      if (!validTypes.includes(file.type)) {
+        toast.error(`${file.name} is not a valid file type. Please upload PDF, JPG, PNG, or TXT files.`);
+        return;
+      }
+      if (file.size > maxSize) {
+        toast.error(`${file.name} is too large. Please upload files smaller than 5MB.`);
+        return;
+      }
+
+      const newRecord: MedicalRecord = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        file: file,
+      };
+
+      setMedicalRecords(prev => [...prev, newRecord]);
+    });
+
+    // Clear the input
+    e.target.value = '';
+  };
+
+  const removeRecord = (id: string) => {
+    setMedicalRecords(prev => prev.filter(record => record.id !== id));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   // Get tomorrow's date as minimum
@@ -209,12 +285,68 @@ const BookDoctor = () => {
                   </div>
                 </div>
 
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Upload Medical Records (Optional)
+                  </label>
+                  <div className="border-2 border-dashed border-border/60 rounded-lg p-4 bg-secondary/20">
+                    <input
+                      type="file"
+                      id="medical-records"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png,.txt"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="medical-records"
+                      className="cursor-pointer flex flex-col items-center justify-center text-center"
+                    >
+                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-sm text-foreground font-medium">
+                        Click to upload medical records
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PDF, JPG, PNG, TXT (Max 5MB per file)
+                      </p>
+                    </label>
+                  </div>
+
+                  {medicalRecords.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs font-medium text-foreground">Uploaded Files:</p>
+                      {medicalRecords.map((record) => (
+                        <div
+                          key={record.id}
+                          className="flex items-center justify-between p-2 bg-secondary/30 rounded border border-border/40"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="h-4 w-4 text-primary shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-foreground truncate">{record.name}</p>
+                              <p className="text-xs text-muted-foreground">{formatFileSize(record.size)}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeRecord(record.id)}
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <Button
                   onClick={handleBook}
-                  disabled={!selectedSlot || !selectedDate || booking}
+                  disabled={!selectedSlot || !selectedDate || booking || uploading}
                   className="w-full bg-gradient-accent text-accent-foreground glow hover:opacity-90"
                 >
-                  {booking ? "Booking..." : "Confirm Appointment"}
+                  {booking ? (uploading ? "Uploading records..." : "Booking...") : "Confirm Appointment"}
                 </Button>
               </CardContent>
             </Card>
