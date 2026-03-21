@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   Activity, ArrowLeft, Phone, Calendar, Clock, MapPin, Star,
   Search, CheckCircle, User, Stethoscope, Upload, FileText, X,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import AppointmentHistory from "@/components/AppointmentHistory";
 
 interface Doctor {
   id: string;
@@ -55,6 +57,7 @@ const BookDoctor = () => {
   const [booked, setBooked] = useState(false);
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const filteredDoctors = MOCK_DOCTORS.filter(
     (d) =>
@@ -174,9 +177,14 @@ const BookDoctor = () => {
               HealthVision <span className="text-gradient">AI</span>
             </span>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Dashboard
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowHistory(true)} className="border-border/60">
+              <History className="h-4 w-4 mr-1" /> History
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> Dashboard
+            </Button>
+          </div>
         </div>
       </nav>
 
@@ -217,6 +225,9 @@ const BookDoctor = () => {
                 <div className="flex gap-3 justify-center">
                   <Button variant="outline" onClick={resetBooking} className="border-border/60">
                     Book Another
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowHistory(true)} className="border-border/60">
+                    <History className="h-4 w-4 mr-1" /> View History
                   </Button>
                   <Button onClick={() => navigate("/dashboard")} className="bg-gradient-accent text-accent-foreground glow">
                     Go to Dashboard
@@ -412,6 +423,10 @@ const BookDoctor = () => {
               ))}
             </div>
           </>
+        )}
+
+        {showHistory && (
+          <AppointmentHistory onClose={() => setShowHistory(false)} />
         )}
       </div>
     </div>
