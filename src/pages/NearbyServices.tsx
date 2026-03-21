@@ -58,23 +58,56 @@ const NearbyServices = () => {
   const getGPSLocation = () => {
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser");
+      toast.error("Geolocation is not supported by your browser");
       return;
     }
     setGettingLocation(true);
     setLocationError(null);
+    
+    // Try high accuracy first (mobile GPS)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setLocation(loc);
         setGettingLocation(false);
-        toast.success("Location detected!");
+        toast.success(`Location detected! (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})`);
         fetchPlaces(loc.lat, loc.lng, activeType);
       },
       (err) => {
-        setLocationError(`Location access denied: ${err.message}`);
-        setGettingLocation(false);
+        console.error("GPS error:", err);
+        
+        // Try fallback with lower accuracy
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            setLocation(loc);
+            setGettingLocation(false);
+            toast.success(`Location detected! (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})`);
+            fetchPlaces(loc.lat, loc.lng, activeType);
+          },
+          (fallbackErr) => {
+            let errorMsg = "Location access denied";
+            switch (err.code) {
+              case err.PERMISSION_DENIED:
+                errorMsg = "Location permission denied. Please enable location access in your browser settings.";
+                break;
+              case err.POSITION_UNAVAILABLE:
+                errorMsg = "Location information is unavailable. Please try manual search.";
+                break;
+              case err.TIMEOUT:
+                errorMsg = "Location request timed out. Please try again or use manual search.";
+                break;
+              default:
+                errorMsg = `Location error: ${err.message}`;
+            }
+            setLocationError(errorMsg);
+            setGettingLocation(false);
+            toast.error(errorMsg);
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 } // 5 min cache
+        );
       },
-      { enableHighAccuracy: true, timeout: 15000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 } // 1 min cache for high accuracy
     );
   };
 
@@ -152,18 +185,24 @@ const NearbyServices = () => {
 
         <Card className="bg-card border-border/60 mb-6">
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={getGPSLocation}
-                disabled={gettingLocation}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                onClick={getGPSLocation} 
+                disabled={gettingLocation || loading} 
                 className="bg-gradient-accent text-accent-foreground glow hover:opacity-90"
+                title="Use your current GPS location"
               >
                 {gettingLocation ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Getting Location...
+                  </>
                 ) : (
-                  <LocateFixed className="h-4 w-4 mr-2" />
+                  <>
+                    <LocateFixed className="h-4 w-4 mr-2" />
+                    Use Current Location
+                  </>
                 )}
-                {gettingLocation ? "Detecting..." : "Use My GPS Location"}
               </Button>
               <div className="flex-1 flex gap-2">
                 <Input
@@ -173,7 +212,7 @@ const NearbyServices = () => {
                   onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
                   className="bg-secondary/30 border-border/60"
                 />
-                <Button variant="outline" onClick={handleManualSearch} disabled={loading} className="border-border/60">
+                <Button variant="outline" onClick={handleManualSearch} disabled={loading} className="border-border/60" title="Search for this address">
                   <MapPin className="h-4 w-4 mr-1" /> Search
                 </Button>
               </div>
@@ -237,6 +276,7 @@ const NearbyServices = () => {
                     loading="lazy"
                     src={getOSMMapUrl()}
                     allowFullScreen
+                    title="Interactive map showing nearby medical services"
                   />
                 </CardContent>
               </Card>
