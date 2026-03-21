@@ -25,7 +25,7 @@ const Dashboard = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [description, setDescription] = useState("");
-  const [activeTab, setActiveTab] = useState<"diagnose" | "vitals" | "history" | "export" | "nearby">("diagnose");
+  const [activeTab, setActiveTab] = useState<"diagnose" | "book" | "nearby" | "tools" | "vitals" | "history" | "export" | "profile">("diagnose");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,6 +84,7 @@ const Dashboard = () => {
         const base64 = (reader.result as string).split(",")[1];
 
         try {
+          console.log("Calling analyze-medical function...");
           const resp = await supabase.functions.invoke("analyze-medical", {
             body: {
               image_base64: base64,
@@ -92,7 +93,12 @@ const Dashboard = () => {
             },
           });
 
-          if (resp.error) throw resp.error;
+          console.log("Function response:", resp);
+
+          if (resp.error) {
+            console.error("Function error:", resp.error);
+            throw new Error(resp.error.message || "Analysis service unavailable");
+          }
 
           const result = resp.data;
           setAnalysisResult(result);
@@ -109,11 +115,28 @@ const Dashboard = () => {
 
           toast.success("Analysis complete!");
         } catch (error: any) {
+          console.error("Analysis error:", error);
+          
+          // Handle different types of errors
+          let errorMessage = "Analysis failed";
+          if (error.message?.includes("404") || error.message?.includes("not found")) {
+            errorMessage = "Analysis service not available - please try again later";
+          } else if (error.message?.includes("429")) {
+            errorMessage = "Too many requests - please wait a moment";
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          toast.error(errorMessage);
+          
+          // Update diagnosis with error status
           await supabase
             .from("diagnoses")
-            .update({ status: "error" })
+            .update({
+              status: "failed",
+              error_message: errorMessage,
+            })
             .eq("id", diagnosis.id);
-          toast.error(error.message || "Analysis failed");
         } finally {
           setAnalyzing(false);
         }
@@ -164,13 +187,13 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row flex-wrap gap-2 mb-8">
           {[
             { id: "diagnose" as const, icon: Brain, label: "AI Diagnosis" },
+            { id: "book" as const, icon: CalendarPlus, label: "Book Doctor" },
+            { id: "nearby" as const, icon: MapPin, label: "Nearby Services" },
+            { id: "tools" as const, icon: Stethoscope, label: "Medical Tools" },
             { id: "vitals" as const, icon: HeartPulse, label: "Vital Signs" },
             { id: "history" as const, icon: FileText, label: "History" },
             { id: "export" as const, icon: Download, label: "Export PDF" },
-            { id: "nearby" as const, icon: MapPin, label: "Nearby Services" },
-            { id: "tools" as const, icon: Stethoscope, label: "Medical Tools" },
             { id: "profile" as const, icon: UserCog, label: "Profile" },
-            { id: "book" as const, icon: CalendarPlus, label: "Book Doctor" },
           ].map(({ id, icon: Icon, label }) => (
             <Button
               key={id}
@@ -234,6 +257,8 @@ const Dashboard = () => {
                       accept="image/*,.pdf"
                       className="hidden"
                       onChange={handleFileSelect}
+                      title="Upload medical report"
+                      placeholder="Choose file"
                     />
                   </div>
 

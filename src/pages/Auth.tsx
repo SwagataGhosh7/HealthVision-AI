@@ -31,11 +31,15 @@ const Auth = () => {
 
     try {
       if (forgotPassword) {
+        console.log("Sending password reset to:", email);
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
-        if (error) throw error;
-        toast.success("Password reset link sent to your email!");
+        if (error) {
+          console.error("Password reset error:", error);
+          throw error;
+        }
+        toast.success("Password reset link sent! Check your email (including spam folder).");
         setForgotPassword(false);
         return;
       }
@@ -46,16 +50,37 @@ const Auth = () => {
         toast.success("Welcome back!");
         navigate("/dashboard");
       } else {
-        const { error } = await supabase.auth.signUp({
+        console.log("Attempting signup with:", { email, fullName });
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { full_name: fullName },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            // Remove email verification - auto confirm the user
+            emailRedirectTo: undefined,
           },
         });
-        if (error) throw error;
-        toast.success("Check your email to confirm your account!");
+        
+        console.log("Signup response:", { data, error });
+        
+        if (error) {
+          console.error("Signup error:", error);
+          throw error;
+        }
+        
+        // Auto sign in after successful signup
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (signInError) {
+          toast.success("Account created! Please sign in.");
+          navigate("/auth");
+        } else {
+          toast.success("Account created and signed in successfully!");
+          navigate("/dashboard");
+        }
       }
     } catch (error: any) {
       toast.error(error.message);

@@ -12,80 +12,48 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
     const { mode, messages } = await req.json();
 
-    let systemPrompt = "";
-
+    // Mock response since lovable API is removed
+    let mockResponse = "";
+    
     if (mode === "symptom-checker") {
-      systemPrompt = `You are a medical AI assistant specializing in symptom analysis. When a user describes symptoms or a possible disease:
-1. Identify the likely condition(s)
-2. Suggest possible medicines (generic names) with dosage guidelines
-3. Recommend home remedies and lifestyle changes
-4. Rate urgency (Low / Moderate / High / Emergency)
-5. Always add a disclaimer that this is not a substitute for professional medical advice.
-Format your response with clear markdown headings and bullet points.`;
+      mockResponse = `**Symptom Analysis Service Unavailable**
+
+The AI symptom checker is temporarily unavailable. Please:
+
+• Consult with a healthcare professional for accurate diagnosis
+• Visit your nearest clinic for medical evaluation
+• Call emergency services for severe symptoms
+
+*This is not a substitute for professional medical advice.*`;
     } else if (mode === "medicine-info") {
-      systemPrompt = `You are a pharmaceutical AI assistant. When a user asks about a medicine:
-1. Provide the medicine's primary uses and indications
-2. List common side effects and rare but serious ones
-3. Mention important drug interactions
-4. Note contraindications (who should NOT take it)
-5. Suggest generic alternatives if applicable
-6. Always add a disclaimer to consult a doctor or pharmacist.
-Format your response with clear markdown headings and bullet points.`;
+      mockResponse = `**Medicine Information Service Unavailable**
+
+The medicine information service is temporarily unavailable. Please:
+
+• Consult your pharmacist or doctor for medication information
+• Read the medication leaflet carefully
+• Contact your healthcare provider for questions about prescriptions
+
+*Always consult healthcare professionals before taking any medication.*`;
     } else if (mode === "chat") {
-      systemPrompt = `You are HealthVision AI, a friendly and knowledgeable health assistant chatbot. You help users with:
-- General health questions and wellness tips
-- Understanding medical terminology
-- First aid guidance
-- Nutrition and exercise advice
-- Mental health support and stress management
-- When to see a doctor
+      mockResponse = `**HealthVision AI Chat - Service Unavailable**
 
-Be empathetic, clear, and concise. Always recommend consulting a healthcare professional for serious concerns. Use markdown formatting for readability.`;
+I'm sorry, but the AI chat service is temporarily unavailable. For health assistance:
+
+• Contact your primary care physician
+• Visit your local clinic
+• Call emergency services for urgent medical issues
+• Use reliable health information sources like WHO or CDC websites
+
+Your health is important - please seek professional medical advice when needed.`;
     } else {
-      throw new Error("Invalid mode. Use 'symptom-checker', 'medicine-info', or 'chat'");
+      mockResponse = "Service temporarily unavailable. Please consult a healthcare professional.";
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error("AI gateway error");
-    }
-
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    return new Response(mockResponse, {
+      headers: { ...corsHeaders, "Content-Type": "text/plain" },
     });
   } catch (e) {
     console.error("health-ai error:", e);
