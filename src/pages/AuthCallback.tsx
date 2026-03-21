@@ -9,11 +9,28 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { error } = await supabase.auth.getSession();
-        if (error) throw error;
+        // Get the URL hash fragment which contains the access tokens
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
         
-        toast.success("Email verified successfully!");
-        navigate("/dashboard");
+        if (accessToken && refreshToken) {
+          // Set the session using the tokens from the URL
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          
+          if (error) throw error;
+          toast.success("Email verified successfully!");
+          navigate("/dashboard");
+        } else {
+          // Fallback to getting current session
+          const { error } = await supabase.auth.getSession();
+          if (error) throw error;
+          toast.success("Email verified successfully!");
+          navigate("/dashboard");
+        }
       } catch (error: any) {
         toast.error(error.message || "Email verification failed");
         navigate("/auth");
