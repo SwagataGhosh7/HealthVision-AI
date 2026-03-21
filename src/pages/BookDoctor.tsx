@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Activity, ArrowLeft, Phone, Calendar, Clock, MapPin, Star,
   Search, CheckCircle, User, Stethoscope, Upload, FileText, X,
-  History,
+  History, CalendarCheck, List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -179,7 +179,10 @@ const BookDoctor = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowHistory(true)} className="border-border/60">
-              <History className="h-4 w-4 mr-1" /> History
+              <List className="h-4 w-4 mr-1" /> All History
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="border-border/60">
+              <CalendarCheck className="h-4 w-4 mr-1" /> Confirmed
             </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Dashboard
@@ -195,6 +198,45 @@ const BookDoctor = () => {
             Find and book appointments with verified healthcare professionals
           </p>
         </motion.div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => setShowHistory(true)}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <List className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground text-sm">Appointment History</h3>
+                  <p className="text-xs text-muted-foreground">View all past and upcoming appointments</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:border-green-500/40 transition-colors cursor-pointer" onClick={() => navigate("/dashboard")}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <CalendarCheck className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground text-sm">Confirmed Appointments</h3>
+                  <p className="text-xs text-muted-foreground">View your scheduled appointments</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
 
         {booked ? (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
@@ -410,7 +452,7 @@ const BookDoctor = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold text-foreground">{doctor.fee}</span>
-                              <a href={`tel:${doctor.phone.replace(/\s/g, "")}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:text-primary/80">
+                              <a href={`tel:${doctor.phone.replace(/\s/g, "")}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:text-primary/80" title={`Call ${doctor.name}`}>
                                 <Phone className="h-4 w-4" />
                               </a>
                             </div>
