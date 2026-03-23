@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { HeartPulse, Thermometer, Wind, Droplets, Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const VitalSignsPanel = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [vitals, setVitals] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
@@ -56,7 +58,7 @@ const VitalSignsPanel = () => {
       return;
     }
 
-    toast.success("Vital signs recorded!");
+    toast.success(t('dashboard.vitalSigns.saveButton') + "!");
     setShowForm(false);
     setForm({ heart_rate: "", blood_pressure_systolic: "", blood_pressure_diastolic: "", temperature: "", oxygen_saturation: "", respiratory_rate: "" });
     fetchVitals();
@@ -80,9 +82,9 @@ const VitalSignsPanel = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground">Vital Signs Monitor</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('dashboard.vitalSigns.title')}</h2>
         <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-accent text-accent-foreground glow">
-          <Plus className="h-4 w-4 mr-2" /> Record Vitals
+          <Plus className="h-4 w-4 mr-2" /> {t('dashboard.vitalSigns.addNew')}
         </Button>
       </div>
 
@@ -91,31 +93,31 @@ const VitalSignsPanel = () => {
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <Label className="text-foreground text-sm">Heart Rate (bpm)</Label>
+                <Label className="text-foreground text-sm">{t('dashboard.vitalSigns.heartRate')} ({t('dashboard.vitalSigns.bpm')})</Label>
                 <Input type="number" placeholder="72" value={form.heart_rate} onChange={(e) => setForm({ ...form, heart_rate: e.target.value })} className="bg-secondary/30 border-border/60" />
               </div>
               <div>
-                <Label className="text-foreground text-sm">Systolic BP (mmHg)</Label>
+                <Label className="text-foreground text-sm">{t('dashboard.vitalSigns.bloodPressure')} ({t('dashboard.vitalSigns.mmHg')})</Label>
                 <Input type="number" placeholder="120" value={form.blood_pressure_systolic} onChange={(e) => setForm({ ...form, blood_pressure_systolic: e.target.value })} className="bg-secondary/30 border-border/60" />
               </div>
               <div>
-                <Label className="text-foreground text-sm">Diastolic BP (mmHg)</Label>
+                <Label className="text-foreground text-sm">{t('dashboard.vitalSigns.bloodPressure')} ({t('dashboard.vitalSigns.mmHg')})</Label>
                 <Input type="number" placeholder="80" value={form.blood_pressure_diastolic} onChange={(e) => setForm({ ...form, blood_pressure_diastolic: e.target.value })} className="bg-secondary/30 border-border/60" />
               </div>
               <div>
-                <Label className="text-foreground text-sm">Temperature (°F)</Label>
+                <Label className="text-foreground text-sm">{t('dashboard.vitalSigns.temperature')} ({t('dashboard.vitalSigns.fahrenheit')})</Label>
                 <Input type="number" step="0.1" placeholder="98.6" value={form.temperature} onChange={(e) => setForm({ ...form, temperature: e.target.value })} className="bg-secondary/30 border-border/60" />
               </div>
               <div>
-                <Label className="text-foreground text-sm">SpO₂ (%)</Label>
+                <Label className="text-foreground text-sm">{t('dashboard.vitalSigns.oxygenSaturation')} ({t('dashboard.vitalSigns.percent')})</Label>
                 <Input type="number" step="0.1" placeholder="98" value={form.oxygen_saturation} onChange={(e) => setForm({ ...form, oxygen_saturation: e.target.value })} className="bg-secondary/30 border-border/60" />
               </div>
               <div>
-                <Label className="text-foreground text-sm">Respiratory Rate</Label>
+                <Label className="text-foreground text-sm">{t('dashboard.vitalSigns.respiratoryRate')}</Label>
                 <Input type="number" placeholder="16" value={form.respiratory_rate} onChange={(e) => setForm({ ...form, respiratory_rate: e.target.value })} className="bg-secondary/30 border-border/60" />
               </div>
               <div className="sm:col-span-2 lg:col-span-3">
-                <Button type="submit" className="bg-gradient-accent text-accent-foreground glow">Save Vital Signs</Button>
+                <Button type="submit" className="bg-gradient-accent text-accent-foreground glow">{t('dashboard.vitalSigns.saveButton')}</Button>
               </div>
             </form>
           </CardContent>
@@ -130,7 +132,7 @@ const VitalSignsPanel = () => {
               <CardContent className="pt-6 text-center">
                 <HeartPulse className="h-8 w-8 text-red-400 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-foreground">{latestVitals.heart_rate}</p>
-                <p className="text-xs text-muted-foreground">BPM</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.vitalSigns.bpm')}</p>
                 <p className={`text-xs mt-1 font-medium ${getHeartRateStatus(latestVitals.heart_rate).color}`}>
                   {getHeartRateStatus(latestVitals.heart_rate).label}
                 </p>
@@ -144,7 +146,7 @@ const VitalSignsPanel = () => {
                 <p className="text-3xl font-bold text-foreground">
                   {latestVitals.blood_pressure_systolic}/{latestVitals.blood_pressure_diastolic}
                 </p>
-                <p className="text-xs text-muted-foreground">mmHg</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.vitalSigns.mmHg')}</p>
                 <p className={`text-xs mt-1 font-medium ${getBPStatus(latestVitals.blood_pressure_systolic, latestVitals.blood_pressure_diastolic).color}`}>
                   {getBPStatus(latestVitals.blood_pressure_systolic, latestVitals.blood_pressure_diastolic).label}
                 </p>
@@ -156,7 +158,7 @@ const VitalSignsPanel = () => {
               <CardContent className="pt-6 text-center">
                 <Thermometer className="h-8 w-8 text-orange-400 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-foreground">{latestVitals.temperature}°F</p>
-                <p className="text-xs text-muted-foreground">Temperature</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.vitalSigns.temperature')}</p>
               </CardContent>
             </Card>
           )}
@@ -165,7 +167,7 @@ const VitalSignsPanel = () => {
               <CardContent className="pt-6 text-center">
                 <Wind className="h-8 w-8 text-cyan-400 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-foreground">{latestVitals.oxygen_saturation}%</p>
-                <p className="text-xs text-muted-foreground">SpO₂</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.vitalSigns.oxygenSaturation')}</p>
               </CardContent>
             </Card>
           )}
@@ -178,7 +180,7 @@ const VitalSignsPanel = () => {
         return heartRateData.length > 1 ? (
           <Card className="bg-card border-border/60">
             <CardHeader>
-              <CardTitle className="text-foreground text-lg">Heart Rate Trend</CardTitle>
+              <CardTitle className="text-foreground text-lg">{t('dashboard.vitalSigns.heartRate')} {t('common.sort')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
@@ -204,7 +206,7 @@ const VitalSignsPanel = () => {
           <Card className="bg-card border-border/60">
             <CardContent className="py-8 text-center">
               <HeartPulse className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">Record at least 2 heart rate readings to see the trend chart</p>
+              <p className="text-muted-foreground text-sm">{t('dashboard.vitalSigns.noData')}</p>
             </CardContent>
           </Card>
         );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Activity, ArrowLeft, Save, User, Heart, ShieldAlert, Droplets, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const ProfileSettings = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -85,10 +87,10 @@ const ProfileSettings = () => {
     }
 
     if (error) {
-      toast.error("Failed to save profile");
+      toast.error(t('profile.failedToSave'));
       console.error(error);
     } else {
-      toast.success("Profile updated successfully!");
+      toast.success(t('profile.profileUpdated'));
     }
     setSaving(false);
   };
@@ -114,16 +116,16 @@ const ProfileSettings = () => {
             </span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Dashboard
+            <ArrowLeft className="h-4 w-4 mr-1" /> {t('profile.backToDashboard')}
           </Button>
         </div>
       </nav>
 
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-2xl font-bold text-foreground mb-1">Profile Settings</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1">{t('profile.title')}</h1>
           <p className="text-muted-foreground text-sm mb-8">
-            Manage your personal and medical information
+            {t('profile.description')}
           </p>
         </motion.div>
 
@@ -132,35 +134,35 @@ const ProfileSettings = () => {
           <Card className="bg-card border-border/60">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-2 text-lg">
-                <User className="h-5 w-5 text-primary" /> Personal Information
+                <User className="h-5 w-5 text-primary" /> {t('profile.personalInformation')}
               </CardTitle>
-              <CardDescription>Your basic personal details</CardDescription>
+              <CardDescription>{t('profile.personalInfoDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-4">
               <div>
-                <Label className="text-foreground text-sm">Full Name</Label>
+                <Label className="text-foreground text-sm">{t('profile.fullName')}</Label>
                 <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="John Doe" className="mt-1 bg-secondary/30 border-border/60" />
               </div>
               <div>
-                <Label className="text-foreground text-sm">Date of Birth</Label>
+                <Label className="text-foreground text-sm">{t('profile.dateOfBirth')}</Label>
                 <Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} className="mt-1 bg-secondary/30 border-border/60" />
               </div>
               <div>
-                <Label className="text-foreground text-sm">Gender</Label>
+                <Label className="text-foreground text-sm">{t('profile.gender')}</Label>
                 <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
                   <SelectTrigger className="mt-1 bg-secondary/30 border-border/60">
-                    <SelectValue placeholder="Select gender" />
+                    <SelectValue placeholder={t('profile.selectGender')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                    <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                    <SelectItem value="male">{t('profile.male')}</SelectItem>
+                    <SelectItem value="female">{t('profile.female')}</SelectItem>
+                    <SelectItem value="other">{t('profile.other')}</SelectItem>
+                    <SelectItem value="prefer-not-to-say">{t('profile.preferNotToSay')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-foreground text-sm">Email</Label>
+                <Label className="text-foreground text-sm">{t('profile.email')}</Label>
                 <Input value={user?.email || ""} disabled className="mt-1 bg-secondary/30 border-border/60 opacity-60" />
               </div>
             </CardContent>
@@ -170,18 +172,18 @@ const ProfileSettings = () => {
           <Card className="bg-card border-border/60">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-2 text-lg">
-                <Heart className="h-5 w-5 text-primary" /> Medical Information
+                <Heart className="h-5 w-5 text-primary" /> {t('profile.medicalInformation')}
               </CardTitle>
-              <CardDescription>Important health details for better diagnostics</CardDescription>
+              <CardDescription>{t('profile.medicalInfoDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-foreground text-sm flex items-center gap-1">
-                  <Droplets className="h-3 w-3" /> Blood Type
+                  <Droplets className="h-3 w-3" /> {t('profile.bloodType')}
                 </Label>
                 <Select value={form.blood_type} onValueChange={(v) => setForm({ ...form, blood_type: v })}>
                   <SelectTrigger className="mt-1 bg-secondary/30 border-border/60">
-                    <SelectValue placeholder="Select blood type" />
+                    <SelectValue placeholder={t('profile.selectBloodType')} />
                   </SelectTrigger>
                   <SelectContent>
                     {bloodTypes.map(bt => (
@@ -192,16 +194,16 @@ const ProfileSettings = () => {
               </div>
               <div>
                 <Label className="text-foreground text-sm flex items-center gap-1">
-                  <ShieldAlert className="h-3 w-3" /> Emergency Contact
+                  <ShieldAlert className="h-3 w-3" /> {t('profile.emergencyContact')}
                 </Label>
                 <Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} placeholder="+91 9876543210" className="mt-1 bg-secondary/30 border-border/60" />
               </div>
               <div className="sm:col-span-2">
-                <Label className="text-foreground text-sm">Allergies (comma-separated)</Label>
+                <Label className="text-foreground text-sm">{t('profile.allergies')}</Label>
                 <Input value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} placeholder="Penicillin, Peanuts, Dust" className="mt-1 bg-secondary/30 border-border/60" />
               </div>
               <div className="sm:col-span-2">
-                <Label className="text-foreground text-sm">Medical Conditions (comma-separated)</Label>
+                <Label className="text-foreground text-sm">{t('profile.medicalConditions')}</Label>
                 <Input value={form.medical_conditions} onChange={(e) => setForm({ ...form, medical_conditions: e.target.value })} placeholder="Diabetes, Asthma, Hypertension" className="mt-1 bg-secondary/30 border-border/60" />
               </div>
             </CardContent>
@@ -209,7 +211,7 @@ const ProfileSettings = () => {
 
           <Button type="submit" disabled={saving} className="w-full bg-gradient-accent text-accent-foreground glow hover:opacity-90">
             {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            {saving ? "Saving..." : "Save Profile"}
+            {saving ? t('profile.saving') : t('profile.saveProfile')}
           </Button>
         </form>
       </div>

@@ -4,6 +4,7 @@ import {
   Activity, Upload, FileText, HeartPulse, Brain, AlertTriangle,
   CheckCircle, LogOut, TrendingUp, MapPin, Stethoscope, UserCog, CalendarPlus, Download
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +17,12 @@ import VitalSignsPanel from "@/components/dashboard/VitalSignsPanel";
 import DiagnosisHistory from "@/components/dashboard/DiagnosisHistory";
 import QuickStatsCards from "@/components/dashboard/QuickStatsCards";
 import ExportPDFReport from "@/components/dashboard/ExportPDFReport";
+import LanguageToggle from "@/components/LanguageToggle";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -32,11 +35,11 @@ const Dashboard = () => {
     if (!file) return;
 
     if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-      toast.error("Please upload an image or PDF file");
+      toast.error(t('dashboard.upload.uploadError'));
       return;
     }
     if (file.size > 20 * 1024 * 1024) {
-      toast.error("File must be under 20MB");
+      toast.error(t('dashboard.upload.sizeError'));
       return;
     }
 
@@ -173,11 +176,12 @@ const Dashboard = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageToggle />
             <span className="text-sm text-muted-foreground hidden md:block">
               {user?.email}
             </span>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-1" /> Sign Out
+              <LogOut className="h-4 w-4 mr-1" /> {t('dashboard.signOut')}
             </Button>
           </div>
         </div>
@@ -186,14 +190,14 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row flex-wrap gap-2 mb-8">
           {[
-            { id: "diagnose" as const, icon: Brain, label: "AI Diagnosis" },
-            { id: "book" as const, icon: CalendarPlus, label: "Book Doctor" },
-            { id: "nearby" as const, icon: MapPin, label: "Nearby Services" },
-            { id: "tools" as const, icon: Stethoscope, label: "Medical Tools" },
-            { id: "vitals" as const, icon: HeartPulse, label: "Vital Signs" },
-            { id: "history" as const, icon: FileText, label: "History" },
-            { id: "export" as const, icon: Download, label: "Export PDF" },
-            { id: "profile" as const, icon: UserCog, label: "Profile" },
+            { id: "diagnose" as const, icon: Brain, label: t('dashboard.tabs.diagnose') },
+            { id: "book" as const, icon: CalendarPlus, label: t('dashboard.tabs.book') },
+            { id: "nearby" as const, icon: MapPin, label: t('dashboard.tabs.nearby') },
+            { id: "tools" as const, icon: Stethoscope, label: t('dashboard.tabs.tools') },
+            { id: "vitals" as const, icon: HeartPulse, label: t('dashboard.tabs.vitals') },
+            { id: "history" as const, icon: FileText, label: t('dashboard.tabs.history') },
+            { id: "export" as const, icon: Download, label: t('dashboard.tabs.export') },
+            { id: "profile" as const, icon: UserCog, label: t('dashboard.tabs.profile') },
           ].map(({ id, icon: Icon, label }) => (
             <Button
               key={id}
@@ -231,10 +235,10 @@ const Dashboard = () => {
                 <CardHeader>
                   <CardTitle className="text-foreground flex items-center gap-2">
                     <Upload className="h-5 w-5 text-primary" />
-                    Upload Medical Report
+                    {t('dashboard.upload.title')}
                   </CardTitle>
                   <CardDescription>
-                    Upload X-rays, MRI scans, CT scans, blood reports, or any medical document for AI analysis
+                    {t('dashboard.upload.description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -247,8 +251,8 @@ const Dashboard = () => {
                     ) : (
                       <div>
                         <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground text-sm">Click to upload or drag & drop</p>
-                        <p className="text-xs text-muted-foreground mt-1">Supports: JPG, PNG, DICOM, PDF (max 20MB)</p>
+                        <p className="text-muted-foreground text-sm">{t('dashboard.upload.clickToUpload')}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t('dashboard.upload.supports')}</p>
                       </div>
                     )}
                     <input
@@ -269,9 +273,9 @@ const Dashboard = () => {
                   )}
 
                   <div>
-                    <Label className="text-foreground text-sm">Description (optional)</Label>
+                    <Label className="text-foreground text-sm">{t('dashboard.upload.descriptionLabel')}</Label>
                     <Input
-                      placeholder="e.g., Chest X-ray for suspected pneumonia"
+                      placeholder={t('dashboard.upload.descriptionPlaceholder')}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       className="mt-1 bg-secondary/30 border-border/60"
@@ -284,9 +288,9 @@ const Dashboard = () => {
                     className="w-full bg-gradient-accent text-accent-foreground glow hover:opacity-90"
                   >
                     {analyzing ? (
-                      <><Brain className="h-4 w-4 mr-2 animate-pulse" /> Analyzing with AI...</>
+                      <><Brain className="h-4 w-4 mr-2 animate-pulse" /> {t('dashboard.upload.analyzingButton')}</>
                     ) : (
-                      <><Brain className="h-4 w-4 mr-2" /> Analyze Report</>
+                      <><Brain className="h-4 w-4 mr-2" /> {t('dashboard.upload.analyzeButton')}</>
                     )}
                   </Button>
                 </CardContent>
@@ -298,15 +302,15 @@ const Dashboard = () => {
                 <CardHeader>
                   <CardTitle className="text-foreground flex items-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
-                    Analysis Results
+                    {t('dashboard.analysis.title')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {analyzing ? (
                     <div className="text-center py-12">
                       <Brain className="h-16 w-16 text-primary mx-auto mb-4 animate-pulse" />
-                      <p className="text-foreground font-medium">AI is analyzing your report...</p>
-                      <p className="text-muted-foreground text-sm mt-1">Using Computer Vision to detect anomalies</p>
+                      <p className="text-foreground font-medium">{t('dashboard.analysis.analyzing')}</p>
+                      <p className="text-muted-foreground text-sm mt-1">{t('dashboard.analysis.analyzingSubtext')}</p>
                     </div>
                   ) : analysisResult ? (
                     <div className="space-y-6">
@@ -316,11 +320,11 @@ const Dashboard = () => {
                         ) : (
                           <CheckCircle className="h-4 w-4" />
                         )}
-                        Severity: {analysisResult.severity?.toUpperCase()}
+                        {t('dashboard.analysis.severity')}: {analysisResult.severity?.toUpperCase()}
                       </div>
 
                       <div>
-                        <h4 className="text-foreground font-semibold mb-2">Diagnosis</h4>
+                        <h4 className="text-foreground font-semibold mb-2">{t('dashboard.analysis.diagnosis')}</h4>
                         <p className="text-muted-foreground text-sm leading-relaxed">
                           {typeof analysisResult.analysis === "string"
                             ? analysisResult.analysis
@@ -330,7 +334,7 @@ const Dashboard = () => {
 
                       {analysisResult.recommendations?.length > 0 && (
                         <div>
-                          <h4 className="text-foreground font-semibold mb-2">Recommendations</h4>
+                          <h4 className="text-foreground font-semibold mb-2">{t('dashboard.analysis.recommendations')}</h4>
                           <ul className="space-y-2">
                             {analysisResult.recommendations.map((rec: string, i: number) => (
                               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -343,13 +347,13 @@ const Dashboard = () => {
                       )}
 
                       <p className="text-xs text-muted-foreground/60 italic">
-                        ⚠ This is an AI-assisted analysis. Always consult a qualified healthcare professional for medical decisions.
+                        {t('dashboard.analysis.disclaimer')}
                       </p>
                     </div>
                   ) : (
                     <div className="text-center py-12">
                       <Brain className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <p className="text-muted-foreground">Upload a medical report to begin AI analysis</p>
+                      <p className="text-muted-foreground">{t('dashboard.analysis.uploadPrompt')}</p>
                     </div>
                   )}
                 </CardContent>

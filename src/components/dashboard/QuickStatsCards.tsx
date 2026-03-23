@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Brain, HeartPulse, Activity, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -13,6 +14,7 @@ interface QuickStats {
 
 const QuickStatsCards = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [stats, setStats] = useState<QuickStats>({
     totalDiagnoses: 0,
     lastHeartRate: null,
@@ -52,30 +54,30 @@ const QuickStatsCards = () => {
   const cards = [
     {
       icon: Brain,
-      label: "Total Diagnoses",
+      label: t('dashboard.quickStats.totalDiagnoses'),
       value: String(stats.totalDiagnoses),
-      sub: "AI analyses completed",
+      sub: t('dashboard.quickStats.totalDiagnosesSub'),
       color: "text-primary",
     },
     {
       icon: HeartPulse,
-      label: "Heart Rate",
+      label: t('dashboard.quickStats.heartRate'),
       value: stats.lastHeartRate ? `${stats.lastHeartRate} bpm` : "—",
-      sub: "Last recorded",
+      sub: t('dashboard.quickStats.heartRateSub'),
       color: "text-red-400",
     },
     {
       icon: Activity,
-      label: "Blood Pressure",
+      label: t('dashboard.quickStats.bloodPressure'),
       value: stats.lastBP || "—",
-      sub: "Systolic / Diastolic",
+      sub: t('dashboard.quickStats.bloodPressureSub'),
       color: "text-blue-400",
     },
     {
       icon: Shield,
-      label: "Health Score",
+      label: t('dashboard.quickStats.healthScore'),
       value: stats.healthScore > 0 ? `${stats.healthScore}%` : "—",
-      sub: "Based on vitals",
+      sub: t('dashboard.quickStats.healthScoreSub'),
       color: "text-emerald-400",
     },
   ];

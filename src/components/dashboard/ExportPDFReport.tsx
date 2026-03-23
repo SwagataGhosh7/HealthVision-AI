@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Download, FileDown, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,7 @@ import autoTable from "jspdf-autotable";
 
 const ExportPDFReport = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [exporting, setExporting] = useState(false);
 
   const generatePDF = async () => {
@@ -227,9 +229,9 @@ const ExportPDFReport = () => {
       }
 
       doc.save(`HealthVision_Report_${new Date().toISOString().split("T")[0]}.pdf`);
-      toast.success("PDF report downloaded!");
+      toast.success(t('dashboard.export.generateButton') + " downloaded!");
     } catch (error: any) {
-      toast.error(error.message || "Failed to generate PDF");
+      toast.error(error.message || t('common.error'));
     } finally {
       setExporting(false);
     }
@@ -240,10 +242,10 @@ const ExportPDFReport = () => {
       <CardHeader>
         <CardTitle className="text-foreground flex items-center gap-2">
           <FileDown className="h-5 w-5 text-primary" />
-          Export Medical Records
+          {t('dashboard.export.title')}
         </CardTitle>
         <CardDescription>
-          Download a comprehensive PDF report of your diagnosis history, vital signs, and recommendations
+          {t('dashboard.export.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -260,9 +262,9 @@ const ExportPDFReport = () => {
           className="w-full bg-gradient-accent text-accent-foreground glow hover:opacity-90"
         >
           {exporting ? (
-            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating PDF...</>
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t('common.loading')}...</>
           ) : (
-            <><Download className="h-4 w-4 mr-2" /> Download PDF Report</>
+            <><Download className="h-4 w-4 mr-2" /> {t('dashboard.export.generateButton')}</>
           )}
         </Button>
       </CardContent>

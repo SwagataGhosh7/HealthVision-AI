@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FileText, AlertTriangle, CheckCircle, Clock, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 
 const DiagnosisHistory = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [diagnoses, setDiagnoses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,11 +31,11 @@ const DiagnosisHistory = () => {
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("diagnoses").delete().eq("id", id);
     if (error) {
-      toast.error("Failed to delete");
+      toast.error(t('common.error'));
       return;
     }
     setDiagnoses((prev) => prev.filter((d) => d.id !== id));
-    toast.success("Diagnosis deleted");
+    toast.success(t('common.success'));
   };
 
   const severityColors: Record<string, string> = {
@@ -50,16 +52,16 @@ const DiagnosisHistory = () => {
     error: <AlertTriangle className="h-4 w-4 text-red-400" />,
   };
 
-  if (loading) return <p className="text-muted-foreground text-center py-12">Loading...</p>;
+  if (loading) return <p className="text-muted-foreground text-center py-12">{t('common.loading')}</p>;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-      <h2 className="text-2xl font-bold text-foreground">Diagnosis History</h2>
+      <h2 className="text-2xl font-bold text-foreground">{t('dashboard.history.title')}</h2>
 
       {diagnoses.length === 0 ? (
         <div className="text-center py-16">
           <FileText className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-          <p className="text-muted-foreground">No diagnoses yet. Upload a medical report to get started.</p>
+          <p className="text-muted-foreground">{t('dashboard.history.noHistory')}</p>
         </div>
       ) : (
         diagnoses.map((d) => (
@@ -86,7 +88,7 @@ const DiagnosisHistory = () => {
                   )}
                   {d.recommendations?.length > 0 && (
                     <div className="mt-2">
-                      <p className="text-xs text-primary font-medium">Recommendations:</p>
+                      <p className="text-xs text-primary font-medium">{t('dashboard.analysis.recommendations')}:</p>
                       <ul className="text-xs text-muted-foreground mt-1 space-y-1">
                         {d.recommendations.slice(0, 3).map((r: string, i: number) => (
                           <li key={i}>• {r}</li>

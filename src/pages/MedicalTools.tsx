@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   Activity, ArrowLeft, Search, Pill, Stethoscope, Send, Loader2, Bot, User,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ type Tool = "symptom-checker" | "medicine-info";
 
 const MedicalTools = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activeTool, setActiveTool] = useState<Tool>("symptom-checker");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -61,14 +63,14 @@ const MedicalTools = () => {
         onDone: () => setIsLoading(false),
       });
     } catch (e: any) {
-      toast.error(e.message || "AI request failed");
+      toast.error(e.message || t('medicalTools.aiRequestFailed'));
       setIsLoading(false);
     }
   };
 
   const placeholders: Record<Tool, string> = {
-    "symptom-checker": "Describe symptoms, e.g. 'headache, fever, body ache for 3 days'",
-    "medicine-info": "Enter a medicine name, e.g. 'Ibuprofen' or 'Amoxicillin'",
+    "symptom-checker": t('medicalTools.symptomPlaceholder'),
+    "medicine-info": t('medicalTools.medicinePlaceholder'),
   };
 
   return (
@@ -84,16 +86,16 @@ const MedicalTools = () => {
             </span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Dashboard
+            <ArrowLeft className="h-4 w-4 mr-1" /> {t('medicalTools.backToDashboard')}
           </Button>
         </div>
       </nav>
 
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-2xl font-bold text-foreground mb-1">AI Medical Tools</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1">{t('medicalTools.title')}</h1>
           <p className="text-muted-foreground text-sm mb-6">
-            Get AI-powered insights on symptoms, diseases, and medicines
+            {t('medicalTools.description')}
           </p>
         </motion.div>
 
@@ -106,7 +108,7 @@ const MedicalTools = () => {
               : "border-border/60 text-muted-foreground"
             }
           >
-            <Stethoscope className="h-4 w-4 mr-2" /> Symptom Checker
+            <Stethoscope className="h-4 w-4 mr-2" /> {t('medicalTools.symptomChecker')}
           </Button>
           <Button
             variant={activeTool === "medicine-info" ? "default" : "outline"}
@@ -116,7 +118,7 @@ const MedicalTools = () => {
               : "border-border/60 text-muted-foreground"
             }
           >
-            <Pill className="h-4 w-4 mr-2" /> Medicine Info
+            <Pill className="h-4 w-4 mr-2" /> {t('medicalTools.medicineInfo')}
           </Button>
         </div>
 
@@ -124,9 +126,9 @@ const MedicalTools = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-foreground text-sm flex items-center gap-2">
               {activeTool === "symptom-checker" ? (
-                <><Stethoscope className="h-4 w-4 text-primary" /> Symptom & Disease Checker</>
+                <><Stethoscope className="h-4 w-4 text-primary" /> {t('medicalTools.symptomDiseaseChecker')}</>
               ) : (
-                <><Pill className="h-4 w-4 text-primary" /> Medicine Information</>
+                <><Pill className="h-4 w-4 text-primary" /> {t('medicalTools.medicineInformation')}</>
               )}
             </CardTitle>
           </CardHeader>
@@ -144,8 +146,8 @@ const MedicalTools = () => {
                   )}
                   <p className="text-muted-foreground text-sm">
                     {activeTool === "symptom-checker"
-                      ? "Describe your symptoms or a disease to get AI-powered medicine and remedy suggestions"
-                      : "Enter a medicine name to learn about its uses, side effects, and interactions"
+                      ? t('medicalTools.symptomDescription')
+                      : t('medicalTools.medicineDescription')
                     }
                   </p>
                 </div>
@@ -213,7 +215,7 @@ const MedicalTools = () => {
             </div>
 
             <p className="text-xs text-muted-foreground/60 italic mt-3 text-center">
-              ⚠ AI-generated content. Always consult a healthcare professional before taking any medication.
+              {t('medicalTools.disclaimer')}
             </p>
           </CardContent>
         </Card>

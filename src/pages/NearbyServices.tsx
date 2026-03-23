@@ -4,6 +4,7 @@ import {
   Activity, MapPin, Navigation, Loader2,
   Ambulance, Pill, ArrowLeft, RefreshCw, Hospital, LocateFixed,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ type ServiceType = "hospital" | "pharmacy" | "ambulance";
 
 const NearbyServices = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activeType, setActiveType] = useState<ServiceType>("hospital");
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,11 +47,11 @@ const NearbyServices = () => {
       if (error) throw error;
       setPlaces(data.places || []);
       if ((data.places || []).length === 0) {
-        toast.info("No results found nearby. Try a different location or category.");
+        toast.info(t('nearbyServices.noResultsNearby'));
       }
     } catch (err: any) {
       console.error("Fetch places error:", err);
-      toast.error("Failed to fetch nearby places. Please try again.");
+      toast.error(t('nearbyServices.failedToFetchPlaces'));
     } finally {
       setLoading(false);
     }
@@ -57,8 +59,8 @@ const NearbyServices = () => {
 
   const getGPSLocation = () => {
     if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
-      toast.error("Geolocation is not supported by your browser");
+      setLocationError(t('nearbyServices.geolocationNotSupported'));
+      toast.error(t('nearbyServices.geolocationNotSupported'));
       return;
     }
     setGettingLocation(true);
@@ -82,23 +84,23 @@ const NearbyServices = () => {
             const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             setLocation(loc);
             setGettingLocation(false);
-            toast.success(`Location detected! (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})`);
+            toast.success(t('nearbyServices.locationDetected', { lat: loc.lat.toFixed(4), lng: loc.lng.toFixed(4) }));
             fetchPlaces(loc.lat, loc.lng, activeType);
           },
           (fallbackErr) => {
-            let errorMsg = "Location access denied";
+            let errorMsg = t('nearbyServices.locationAccessDenied');
             switch (err.code) {
               case err.PERMISSION_DENIED:
-                errorMsg = "Location permission denied. Please enable location access in your browser settings.";
+                errorMsg = t('nearbyServices.locationPermissionDenied');
                 break;
               case err.POSITION_UNAVAILABLE:
-                errorMsg = "Location information is unavailable. Please try manual search.";
+                errorMsg = t('nearbyServices.locationUnavailable');
                 break;
               case err.TIMEOUT:
-                errorMsg = "Location request timed out. Please try again or use manual search.";
+                errorMsg = t('nearbyServices.locationTimeout');
                 break;
               default:
-                errorMsg = `Location error: ${err.message}`;
+                errorMsg = t('nearbyServices.locationError', { message: err.message });
             }
             setLocationError(errorMsg);
             setGettingLocation(false);
@@ -113,7 +115,7 @@ const NearbyServices = () => {
 
   const handleManualSearch = async () => {
     if (!manualAddress.trim()) {
-      toast.error("Please enter a location");
+      toast.error(t('nearbyServices.enterLocation'));
       return;
     }
     setLoading(true);
@@ -124,16 +126,16 @@ const NearbyServices = () => {
       );
       const results = await res.json();
       if (!results.length) {
-        toast.error("Location not found. Try a more specific address.");
+        toast.error(t('nearbyServices.locationNotFound'));
         setLoading(false);
         return;
       }
       const loc = { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
       setLocation(loc);
-      toast.success(`Found: ${results[0].display_name.split(",").slice(0, 2).join(",")}`);
+      toast.success(t('nearbyServices.found', { location: results[0].display_name.split(",").slice(0, 2).join(",") }));
       fetchPlaces(loc.lat, loc.lng, activeType);
     } catch {
-      toast.error("Failed to geocode address");
+      toast.error(t('nearbyServices.failedToGeocode'));
       setLoading(false);
     }
   };
@@ -152,9 +154,9 @@ const NearbyServices = () => {
   };
 
   const serviceOptions = [
-    { id: "hospital" as const, icon: Hospital, label: "Hospitals" },
-    { id: "ambulance" as const, icon: Ambulance, label: "Ambulance" },
-    { id: "pharmacy" as const, icon: Pill, label: "Pharmacies" },
+    { id: "hospital" as const, icon: Hospital, label: t('nearbyServices.hospitals') },
+    { id: "ambulance" as const, icon: Ambulance, label: t('nearbyServices.ambulance') },
+    { id: "pharmacy" as const, icon: Pill, label: t('nearbyServices.pharmacies') },
   ];
 
   return (
@@ -170,16 +172,16 @@ const NearbyServices = () => {
             </span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Dashboard
+            <ArrowLeft className="h-4 w-4 mr-1" /> {t('nearbyServices.backToDashboard')}
           </Button>
         </div>
       </nav>
 
       <div className="container mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-2xl font-bold text-foreground mb-1">Nearby Medical Services</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1">{t('nearbyServices.title')}</h1>
           <p className="text-muted-foreground text-sm mb-6">
-            Find hospitals, ambulance services, and pharmacies near you
+            {t('nearbyServices.description')}
           </p>
         </motion.div>
 
@@ -190,37 +192,37 @@ const NearbyServices = () => {
                 onClick={getGPSLocation} 
                 disabled={gettingLocation || loading} 
                 className="bg-gradient-accent text-accent-foreground glow hover:opacity-90"
-                title="Use your current GPS location"
+                title={t('nearbyServices.useCurrentLocation')}
               >
                 {gettingLocation ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Getting Location...
+                    {t('nearbyServices.gettingLocation')}
                   </>
                 ) : (
                   <>
                     <LocateFixed className="h-4 w-4 mr-2" />
-                    Use Current Location
+                    {t('nearbyServices.useCurrentLocation')}
                   </>
                 )}
               </Button>
               <div className="flex-1 flex gap-2">
                 <Input
-                  placeholder="Or type a city / address (e.g., New York, Mumbai)"
+                  placeholder={t('nearbyServices.locationPlaceholder')}
                   value={manualAddress}
                   onChange={(e) => setManualAddress(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
                   className="bg-secondary/30 border-border/60"
                 />
                 <Button variant="outline" onClick={handleManualSearch} disabled={loading} className="border-border/60" title="Search for this address">
-                  <MapPin className="h-4 w-4 mr-1" /> Search
+                  <MapPin className="h-4 w-4 mr-1" /> {t('nearbyServices.search')}
                 </Button>
               </div>
             </div>
             {locationError && <p className="text-destructive text-xs mt-2">{locationError}</p>}
             {location && (
               <p className="text-primary text-xs mt-2">
-                📍 Location set: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                {t('nearbyServices.locationSet', { lat: location.lat.toFixed(4), lng: location.lng.toFixed(4) })}
               </p>
             )}
           </CardContent>
@@ -254,9 +256,9 @@ const NearbyServices = () => {
           <Card className="bg-card border-border/60">
             <CardContent className="py-12 text-center">
               <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-foreground font-medium">Set Your Location</p>
+              <p className="text-foreground font-medium">{t('nearbyServices.setYourLocation')}</p>
               <p className="text-muted-foreground text-sm mt-1">
-                Use GPS or type an address above to find nearby medical services
+                {t('nearbyServices.setLocationDescription')}
               </p>
             </CardContent>
           </Card>
@@ -267,7 +269,7 @@ const NearbyServices = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-foreground text-sm flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-primary" />
-                    Live Map
+                    {t('nearbyServices.liveMap')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -289,7 +291,7 @@ const NearbyServices = () => {
                     {serviceOptions.find(s => s.id === activeType) &&
                       (() => { const S = serviceOptions.find(s => s.id === activeType)!; return <S.icon className="h-4 w-4 text-primary" />; })()
                     }
-                    {loading ? "Searching..." : `${places.length} Found Nearby`}
+                    {loading ? t('nearbyServices.searching') : `${places.length} ${t('nearbyServices.foundNearby')}`}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 max-h-[420px] overflow-y-auto">
@@ -299,7 +301,7 @@ const NearbyServices = () => {
                     </div>
                   ) : places.length === 0 ? (
                     <p className="text-muted-foreground text-sm text-center py-8">
-                      No results found. Try searching a different location.
+                      {t('nearbyServices.noResults')}
                     </p>
                   ) : (
                     places.map((place) => (
@@ -321,7 +323,7 @@ const NearbyServices = () => {
                         <div className="flex items-center gap-3 mt-2">
                           <a href={getDirectionsUrl(place)} target="_blank" rel="noopener noreferrer" className="ml-auto">
                             <Button size="sm" variant="outline" className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/10">
-                              <Navigation className="h-3 w-3 mr-1" /> Directions
+                              <Navigation className="h-3 w-3 mr-1" /> {t('nearbyServices.directions')}
                             </Button>
                           </a>
                         </div>
