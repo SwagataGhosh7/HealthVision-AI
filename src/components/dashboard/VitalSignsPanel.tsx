@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { HeartPulse, Thermometer, Wind, Droplets, Plus } from "lucide-react";
+import { HeartPulse, Thermometer, Wind, Droplets, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,15 @@ const VitalSignsPanel = () => {
       .eq("user_id", user!.id)
       .order("recorded_at", { ascending: true })
       .limit(50);
-    if (data) setVitals(data);
+    if (data) {
+      // Format the data for the chart
+      const formattedData = data.map(vital => ({
+        ...vital,
+        formatted_date: new Date(vital.recorded_at).toLocaleDateString(),
+        formatted_time: new Date(vital.recorded_at).toLocaleTimeString()
+      }));
+      setVitals(formattedData);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +72,27 @@ const VitalSignsPanel = () => {
     fetchVitals();
   };
 
+  const handleReset = async () => {
+    if (!user) return;
+    
+    if (!window.confirm(t('dashboard.vitalSigns.resetConfirm'))) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("vital_signs")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error(t('dashboard.vitalSigns.resetFailed'));
+      console.error(error);
+    } else {
+      toast.success(t('dashboard.vitalSigns.resetSuccess'));
+      setVitals([]);
+    }
+  };
+
   const latestVitals = vitals.length > 0 ? vitals[vitals.length - 1] : null;
 
   const getHeartRateStatus = (hr: number) => {
@@ -83,9 +112,19 @@ const VitalSignsPanel = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-foreground">{t('dashboard.vitalSigns.title')}</h2>
-        <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-accent text-accent-foreground glow">
-          <Plus className="h-4 w-4 mr-2" /> {t('dashboard.vitalSigns.addNew')}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleReset} 
+            variant="outline" 
+            className="border-red-200 text-red-600 hover:bg-red-50"
+            disabled={vitals.length === 0}
+          >
+            <Trash2 className="h-4 w-4 mr-2" /> {t('dashboard.vitalSigns.resetData')}
+          </Button>
+          <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-accent text-accent-foreground glow">
+            <Plus className="h-4 w-4 mr-2" /> {t('dashboard.vitalSigns.addNew')}
+          </Button>
+        </div>
       </div>
 
       {showForm && (
@@ -176,7 +215,11 @@ const VitalSignsPanel = () => {
 
       {/* Heart Rate Chart */}
       {vitals.length > 0 && (() => {
-        const heartRateData = vitals.filter(v => v.heart_rate);
+        const heartRateData = vitals.filter(v => v.heart_rate).map(v => ({
+          ...v,
+          heart_rate: v.heart_rate,
+          recorded_at: v.formatted_date
+        }));
         return heartRateData.length > 1 ? (
           <Card className="bg-card border-border/60">
             <CardHeader>
@@ -187,8 +230,8 @@ const VitalSignsPanel = () => {
                 <LineChart data={heartRateData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 20% 18%)" />
                   <XAxis
-                    dataKey="recorded_at"
-                    tickFormatter={(v) => new Date(v).toLocaleDateString()}
+                    dataKey="formatted_date"
+                    tickFormatter={(v) => v}
                     stroke="hsl(215 15% 55%)"
                     fontSize={12}
                   />
