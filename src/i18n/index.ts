@@ -5,9 +5,9 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import enTranslations from './locales/en.json';
 import bnTranslations from './locales/bn.json';
 
-const resources = {
+const resources = { 
   en: {
-    translation: enTranslations
+    translation: enTranslations 
   },
   bn: {
     translation: bnTranslations

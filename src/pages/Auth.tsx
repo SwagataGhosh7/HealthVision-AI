@@ -46,9 +46,13 @@ const Auth = () => {
 
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Welcome back!");
-        navigate("/dashboard");
+        if (error) {
+          // Show generic invalid password message for any login error
+          toast.error("Invalid password");
+        } else {
+          toast.success("Welcome back!");
+          navigate("/dashboard");
+        }
       } else {
         console.log("Attempting signup with:", { email, fullName });
         const { data, error } = await supabase.auth.signUp({
@@ -56,7 +60,6 @@ const Auth = () => {
           password,
           options: {
             data: { full_name: fullName },
-            // Remove email verification - auto confirm the user
             emailRedirectTo: undefined,
           },
         });
@@ -68,19 +71,8 @@ const Auth = () => {
           throw error;
         }
         
-        // Auto sign in after successful signup
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (signInError) {
-          toast.success("Account created! Please sign in.");
-          navigate("/auth");
-        } else {
-          toast.success("Account created and signed in successfully!");
-          navigate("/dashboard");
-        }
+        toast.success("Account created! Please check your email to verify.");
+        setIsLogin(true);
       }
     } catch (error: any) {
       toast.error(error.message);
