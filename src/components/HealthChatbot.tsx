@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { streamChat, type Msg } from "@/lib/streamChat";
+import { useAuth } from "@/contexts/AuthContext";
 
 const HealthChatbot = () => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -19,6 +21,8 @@ const HealthChatbot = () => {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, open]);
+
+  if (!user) return null;
 
   const handleSend = async () => {
     const text = input.trim();
