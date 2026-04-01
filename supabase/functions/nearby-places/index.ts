@@ -12,10 +12,18 @@ serve(async (req) => {
   }
 
   try {
-    const { latitude, longitude, type } = await req.json();
+    const body = await req.json();
 
-    if (!latitude || !longitude || !type) {
+    if (!body.latitude || !body.longitude || !body.type) {
       throw new Error("latitude, longitude, and type are required");
+    }
+
+    const latitude = parseFloat(body.latitude);
+    const longitude = parseFloat(body.longitude);
+    const type = body.type;
+
+    if (isNaN(latitude) || isNaN(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      return new Response(JSON.stringify({ error: "Invalid coordinates" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const validTypes = ["hospital", "pharmacy", "ambulance"];
