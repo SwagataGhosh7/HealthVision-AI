@@ -8,8 +8,12 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { streamChat, type Msg } from "@/lib/streamChat";
+import { useAuth } from "@/contexts/AuthContext";
 
 const HealthChatbot = () => {
+  const { user } = useAuth();
+  if (!user) return null;
+
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
