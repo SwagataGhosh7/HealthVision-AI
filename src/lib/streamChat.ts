@@ -32,9 +32,24 @@ export async function streamChat({
     body: JSON.stringify({ mode, messages }),
   });
 
-  if (!resp.ok || !resp.body) {
+  if (!resp.ok) {
     const err = await resp.json().catch(() => ({ error: "Request failed" }));
     throw new Error(err.error || "Request failed");
+  }
+
+  const contentType = resp.headers.get("content-type") || "";
+
+  // Handle plain text responses (current edge function format)
+  if (!contentType.includes("text/event-stream")) {
+    const text = await resp.text();
+    onDelta(text);
+    onDone();
+    return;
+  }
+
+  // Handle SSE streaming responses (future AI streaming format)
+  if (!resp.body) {
+    throw new Error("No response body");
   }
 
   const reader = resp.body.getReader();
@@ -67,9 +82,8 @@ export async function streamChat({
     }
   }
 
-  // flush remaining
   if (buffer.trim()) {
-    for (let raw of buffer.split("\n")) {
+    for (const raw of buffer.split("\n")) {
       if (!raw || !raw.startsWith("data: ")) continue;
       const json = raw.slice(6).trim();
       if (json === "[DONE]") continue;
