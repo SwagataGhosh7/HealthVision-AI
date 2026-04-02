@@ -34,20 +34,9 @@ export async function streamChat({
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ error: "Request failed" }));
-    throw new Error(err.error || "Request failed");
+    throw new Error(err.error || `Request failed with status ${resp.status}`);
   }
 
-  const contentType = resp.headers.get("content-type") || "";
-
-  // Handle plain text responses (current edge function format)
-  if (!contentType.includes("text/event-stream")) {
-    const text = await resp.text();
-    onDelta(text);
-    onDone();
-    return;
-  }
-
-  // Handle SSE streaming responses (future AI streaming format)
   if (!resp.body) {
     throw new Error("No response body");
   }
@@ -55,40 +44,51 @@ export async function streamChat({
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  let done = false;
+  let streamDone = false;
 
-  while (!done) {
-    const { done: readerDone, value } = await reader.read();
-    if (readerDone) break;
+  while (!streamDone) {
+    const { done, value } = await reader.read();
+    if (done) break;
     buffer += decoder.decode(value, { stream: true });
 
     let idx: number;
     while ((idx = buffer.indexOf("\n")) !== -1) {
       let line = buffer.slice(0, idx);
       buffer = buffer.slice(idx + 1);
+
       if (line.endsWith("\r")) line = line.slice(0, -1);
       if (line.startsWith(":") || line.trim() === "") continue;
       if (!line.startsWith("data: ")) continue;
-      const json = line.slice(6).trim();
-      if (json === "[DONE]") { done = true; break; }
+
+      const jsonStr = line.slice(6).trim();
+      if (jsonStr === "[DONE]") {
+        streamDone = true;
+        break;
+      }
+
       try {
-        const parsed = JSON.parse(json);
+        const parsed = JSON.parse(jsonStr);
         const content = parsed.choices?.[0]?.delta?.content;
         if (content) onDelta(content);
       } catch {
+        // Incomplete JSON split across chunks — put it back
         buffer = line + "\n" + buffer;
         break;
       }
     }
   }
 
+  // Flush remaining buffer
   if (buffer.trim()) {
-    for (const raw of buffer.split("\n")) {
-      if (!raw || !raw.startsWith("data: ")) continue;
-      const json = raw.slice(6).trim();
-      if (json === "[DONE]") continue;
+    for (let raw of buffer.split("\n")) {
+      if (!raw) continue;
+      if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+      if (raw.startsWith(":") || raw.trim() === "") continue;
+      if (!raw.startsWith("data: ")) continue;
+      const jsonStr = raw.slice(6).trim();
+      if (jsonStr === "[DONE]") continue;
       try {
-        const parsed = JSON.parse(json);
+        const parsed = JSON.parse(jsonStr);
         const content = parsed.choices?.[0]?.delta?.content;
         if (content) onDelta(content);
       } catch {}
