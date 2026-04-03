@@ -22,7 +22,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
