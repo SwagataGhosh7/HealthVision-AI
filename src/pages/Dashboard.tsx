@@ -88,11 +88,13 @@ const Dashboard = () => {
 
         try {
           console.log("Calling analyze-medical function...");
+          const currentLang = i18n.language || "en";
           const resp = await supabase.functions.invoke("analyze-medical", {
             body: {
               image_base64: base64,
               file_type: selectedFile.type,
               description: description,
+              language: currentLang,
             },
           });
 
