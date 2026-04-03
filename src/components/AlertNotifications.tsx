@@ -13,6 +13,21 @@ interface Alert {
   timestamp: Date;
 }
 
+const DISMISSED_KEY = "healthvision_dismissed_alerts";
+
+const getDismissedIds = (): Set<string> => {
+  try {
+    const stored = localStorage.getItem(DISMISSED_KEY);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  } catch {
+    return new Set();
+  }
+};
+
+const saveDismissedIds = (ids: Set<string>) => {
+  localStorage.setItem(DISMISSED_KEY, JSON.stringify([...ids]));
+};
+
 const AlertNotifications = () => {
   const { user } = useAuth();
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -22,7 +37,8 @@ const AlertNotifications = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Check for high/critical severity diagnoses
+    const dismissed = getDismissedIds();
+
     const checkAlerts = async () => {
       const { data } = await supabase
         .from("diagnoses")
@@ -33,13 +49,15 @@ const AlertNotifications = () => {
         .limit(10);
 
       if (data && data.length > 0) {
-        const newAlerts: Alert[] = data.map((d) => ({
-          id: d.id,
-          type: d.severity === "critical" ? "critical" : "warning",
-          title: d.severity === "critical" ? "Critical Diagnosis Alert" : "High Severity Alert",
-          message: `${d.title}: ${typeof d.analysis_result === "string" ? d.analysis_result : "Requires immediate medical attention."}`,
-          timestamp: new Date(d.created_at),
-        }));
+        const newAlerts: Alert[] = data
+          .filter((d) => !dismissed.has(d.id))
+          .map((d) => ({
+            id: d.id,
+            type: d.severity === "critical" ? "critical" : "warning",
+            title: d.severity === "critical" ? "Critical Diagnosis Alert" : "High Severity Alert",
+            message: `${d.title}: ${typeof d.analysis_result === "string" ? d.analysis_result : "Requires immediate medical attention."}`,
+            timestamp: new Date(d.created_at),
+          }));
         setAlerts(newAlerts);
         setUnread(newAlerts.length);
       }
@@ -47,7 +65,6 @@ const AlertNotifications = () => {
 
     checkAlerts();
 
-    // Check vitals for abnormalities
     const checkVitals = async () => {
       const { data } = await supabase
         .from("vital_signs")
@@ -60,31 +77,40 @@ const AlertNotifications = () => {
       if (data) {
         const vitalAlerts: Alert[] = [];
         if (data.heart_rate && (data.heart_rate > 120 || data.heart_rate < 50)) {
-          vitalAlerts.push({
-            id: `hr-${data.id}`,
-            type: "critical",
-            title: "Abnormal Heart Rate",
-            message: `Heart rate of ${data.heart_rate} BPM detected. ${data.heart_rate > 120 ? "Tachycardia" : "Bradycardia"} — consult a doctor immediately.`,
-            timestamp: new Date(data.recorded_at),
-          });
+          const id = `hr-${data.id}`;
+          if (!dismissed.has(id)) {
+            vitalAlerts.push({
+              id,
+              type: "critical",
+              title: "Abnormal Heart Rate",
+              message: `Heart rate of ${data.heart_rate} BPM detected. ${data.heart_rate > 120 ? "Tachycardia" : "Bradycardia"} — consult a doctor immediately.`,
+              timestamp: new Date(data.recorded_at),
+            });
+          }
         }
         if (data.oxygen_saturation && data.oxygen_saturation < 92) {
-          vitalAlerts.push({
-            id: `o2-${data.id}`,
-            type: "critical",
-            title: "Low Oxygen Saturation",
-            message: `SpO2 at ${data.oxygen_saturation}%. This is dangerously low. Seek emergency care.`,
-            timestamp: new Date(data.recorded_at),
-          });
+          const id = `o2-${data.id}`;
+          if (!dismissed.has(id)) {
+            vitalAlerts.push({
+              id,
+              type: "critical",
+              title: "Low Oxygen Saturation",
+              message: `SpO2 at ${data.oxygen_saturation}%. This is dangerously low. Seek emergency care.`,
+              timestamp: new Date(data.recorded_at),
+            });
+          }
         }
         if (data.blood_pressure_systolic && data.blood_pressure_systolic > 180) {
-          vitalAlerts.push({
-            id: `bp-${data.id}`,
-            type: "warning",
-            title: "Hypertensive Crisis",
-            message: `Blood pressure ${data.blood_pressure_systolic}/${data.blood_pressure_diastolic} mmHg. Consult a doctor.`,
-            timestamp: new Date(data.recorded_at),
-          });
+          const id = `bp-${data.id}`;
+          if (!dismissed.has(id)) {
+            vitalAlerts.push({
+              id,
+              type: "warning",
+              title: "Hypertensive Crisis",
+              message: `Blood pressure ${data.blood_pressure_systolic}/${data.blood_pressure_diastolic} mmHg. Consult a doctor.`,
+              timestamp: new Date(data.recorded_at),
+            });
+          }
         }
         if (vitalAlerts.length > 0) {
           setAlerts((prev) => [...vitalAlerts, ...prev]);
@@ -97,6 +123,9 @@ const AlertNotifications = () => {
   }, [user]);
 
   const dismissAlert = (id: string) => {
+    const dismissed = getDismissedIds();
+    dismissed.add(id);
+    saveDismissedIds(dismissed);
     setAlerts((prev) => prev.filter((a) => a.id !== id));
     setUnread((prev) => Math.max(0, prev - 1));
   };
