@@ -59,19 +59,20 @@ serve(async (req) => {
       userContent.push({ type: "text", text: `Additional context from user: ${description}` });
     }
 
-    if (image_base64 && file_type?.startsWith("image/")) {
+    if (image_base64 && (file_type?.startsWith("image/") || file_type === "application/pdf")) {
+      // Gemini supports both images and PDFs via base64 data URL
       userContent.push({
         type: "image_url",
         image_url: {
           url: `data:${file_type};base64,${image_base64}`,
         },
       });
-      userContent.push({ type: "text", text: "Please analyze this medical image." });
+      const docType = file_type === "application/pdf" ? "medical document/report" : "medical image";
+      userContent.push({ type: "text", text: `Please analyze this ${docType} thoroughly. Extract all relevant medical data, findings, values, and provide a detailed analysis.` });
     } else if (image_base64) {
-      // For PDFs or non-image files, send as text context
       userContent.push({ 
         type: "text", 
-        text: `A medical document (${file_type}) has been uploaded. Please provide a general medical analysis based on the file type and any context provided. Analyze what you can and provide recommendations.` 
+        text: `A medical file (${file_type}) has been uploaded. Please provide analysis based on the context provided.` 
       });
     } else {
       userContent.push({ type: "text", text: "Please provide a general health analysis based on the context provided." });
