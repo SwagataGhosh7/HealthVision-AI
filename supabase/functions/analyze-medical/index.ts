@@ -45,7 +45,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { image_base64, file_type, description } = await req.json();
+    const { image_base64, file_type, description, language } = await req.json();
+
+    const langInstruction = language && language !== "en"
+      ? `\n\nIMPORTANT: You MUST write ALL text values (analysis and recommendations) in ${language === "bn" ? "Bengali (বাংলা)" : language}. The JSON keys must remain in English, but all string values must be in the specified language.`
+      : "";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -88,7 +92,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: SYSTEM_PROMPT + langInstruction },
           { role: "user", content: userContent },
         ],
         temperature: 0.3,

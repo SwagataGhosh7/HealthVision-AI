@@ -22,7 +22,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -88,11 +88,13 @@ const Dashboard = () => {
 
         try {
           console.log("Calling analyze-medical function...");
+          const currentLang = i18n.language || "en";
           const resp = await supabase.functions.invoke("analyze-medical", {
             body: {
               image_base64: base64,
               file_type: selectedFile.type,
               description: description,
+              language: currentLang,
             },
           });
 
