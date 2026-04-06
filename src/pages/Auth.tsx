@@ -82,21 +82,32 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
+    try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log("Starting Google sign-in with redirect:", redirectUrl);
+      
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: redirectUrl,
+      });
 
-    if (result.error) {
-      toast.error("Google sign-in failed");
-      return;
+      if (result.error) {
+        console.error("Google sign-in error:", result.error);
+        toast.error("Google sign-in failed: " + result.error.message);
+        return;
+      }
+
+      if (result.redirected) {
+        console.log("Google OAuth redirecting...");
+        return;
+      }
+
+      console.log("Google sign-in successful!");
+      toast.success("Welcome!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Google sign-in exception:", error);
+      toast.error(error.message || "Google sign-in failed");
     }
-
-    if (result.redirected) {
-      return;
-    }
-
-    toast.success("Welcome!");
-    navigate("/dashboard");
   };
 
   return (

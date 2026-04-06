@@ -178,5 +178,33 @@
     "toggle": "Language",
     "english": "English",
     "bengali": "বাংলা"
+  },
+  "medicalAnalysis": {
+    "title": "Medical Health Analysis",
+    "description": "Analyze your symptoms and vital signs with AI",
+    "symptoms": "Symptoms",
+    "symptomsPlaceholder": "e.g., headache, fever, cough...",
+    "symptomsHint": "Separate with commas",
+    "medicalHistory": "Medical History",
+    "medicalHistoryPlaceholder": "Any chronic conditions or allergies...",
+    "heartRate": "Heart Rate (bpm)",
+    "heartRatePlaceholder": "60-100",
+    "bloodPressure": "Blood Pressure",
+    "bloodPressurePlaceholder": "120/80",
+    "temperature": "Temperature (°F)",
+    "temperaturePlaceholder": "98.6",
+    "oxygenSaturation": "Oxygen Saturation (%)",
+    "oxygenSaturationPlaceholder": "95-100",
+    "analyze": "Analyze",
+    "analyzing": "Analyzing...",
+    "severity": "Severity",
+    "diagnosis": "Diagnosis",
+    "recommendations": "Recommendations",
+    "newAnalysis": "New Analysis",
+    "enterInfo": "Please provide at least one piece of information",
+    "analysisCompleted": "Analysis completed",
+    "analysisFailed": "Analysis failed",
+    "warning": "Warning: This appears to be a serious condition. Seek medical attention immediately.",
+    "disclaimer": "⚠️ This is an AI-assisted analysis. Always consult a qualified healthcare professional for medical decisions."
   }
 }

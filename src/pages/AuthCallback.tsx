@@ -13,7 +13,22 @@ const AuthCallback = () => {
       console.log("Hash fragment:", window.location.hash);
       
       try {
-        // Get the URL hash fragment which contains the access tokens
+        // First, check if there's already a session (OAuth usually sets this)
+        const { data: { session }, error: sessionCheckError } = await supabase.auth.getSession();
+        
+        if (sessionCheckError) {
+          console.error("Session check error:", sessionCheckError);
+          throw sessionCheckError;
+        }
+        
+        if (session) {
+          console.log("Session found from OAuth!");
+          toast.success("Logged in successfully!");
+          navigate("/dashboard");
+          return;
+        }
+
+        // Fallback: Get the URL hash fragment which contains the access tokens
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
@@ -38,21 +53,13 @@ const AuthCallback = () => {
           toast.success("Email verified successfully!");
           navigate("/dashboard");
         } else {
-          // Fallback: check if there's already a session
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          if (sessionError) throw sessionError;
-          
-          if (session) {
-            toast.success("Already logged in!");
-            navigate("/dashboard");
-          } else {
-            toast.error("No valid session found - please check your email verification link");
-            navigate("/auth");
-          }
+          // No session or tokens found
+          console.warn("No session or tokens found, redirecting to auth");
+          navigate("/auth");
         }
       } catch (error: any) {
         console.error("Auth callback error:", error);
-        toast.error(error.message || "Email verification failed");
+        toast.error(error.message || "Authentication failed");
         navigate("/auth");
       }
     };
@@ -64,7 +71,7 @@ const AuthCallback = () => {
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-foreground">Verifying your email...</p>
+        <p className="text-foreground">Verifying your authentication...</p>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, Upload, FileText, HeartPulse, Brain, AlertTriangle,
-  CheckCircle, LogOut, TrendingUp, MapPin, Stethoscope, UserCog, CalendarPlus, Download
+  CheckCircle, LogOut, TrendingUp, MapPin, Stethoscope, UserCog, CalendarPlus, Download, Globe
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,21 @@ const Dashboard = () => {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [description, setDescription] = useState("");
   const [activeTab, setActiveTab] = useState<"diagnose" | "book" | "nearby" | "tools" | "vitals" | "history" | "export" | "profile">("diagnose");
+
+  // Helper function to translate severity to Bengali
+  const getSeverityLabel = (severity: string): string => {
+    if (i18n.language === "bn") {
+      const severityMap: { [key: string]: string } = {
+        "critical": "গুরুতর",
+        "high": "উচ্চ",
+        "moderate": "মধ্যম",
+        "low": "নিম্ন",
+        "mild": "হালকা"
+      };
+      return severityMap[severity.toLowerCase()] || severity;
+    }
+    return severity.toUpperCase();
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -316,17 +331,30 @@ const Dashboard = () => {
                     </div>
                   ) : analysisResult ? (
                     <div className="space-y-6">
+                      {/* Analysis Results Title */}
+                      <div className="mb-4">
+                        <h3 className="text-lg font-bold text-foreground mb-1">
+                          {i18n.language === "bn" ? "বিশ্লেষণ ফলাফল" : "Analysis Results"}
+                        </h3>
+                      </div>
+
+                      {/* Severity Badge */}
                       <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium ${severityColors[analysisResult.severity] || severityColors.low}`}>
                         {analysisResult.severity === "critical" || analysisResult.severity === "high" ? (
                           <AlertTriangle className="h-4 w-4" />
                         ) : (
                           <CheckCircle className="h-4 w-4" />
                         )}
-                        {t('dashboard.analysis.severity')}: {analysisResult.severity?.toUpperCase()}
+                        <span>
+                          {i18n.language === "bn" ? "তীব্রতা" : t('dashboard.analysis.severity')}: {getSeverityLabel(analysisResult.severity)}
+                        </span>
                       </div>
 
+                      {/* Diagnosis Section */}
                       <div>
-                        <h4 className="text-foreground font-semibold mb-2">{t('dashboard.analysis.diagnosis')}</h4>
+                        <h4 className="text-foreground font-semibold mb-2">
+                          {i18n.language === "bn" ? "রোগ নির্ণয়" : t('dashboard.analysis.diagnosis')}
+                        </h4>
                         <p className="text-muted-foreground text-sm leading-relaxed">
                           {typeof analysisResult.analysis === "string"
                             ? analysisResult.analysis
@@ -334,9 +362,12 @@ const Dashboard = () => {
                         </p>
                       </div>
 
+                      {/* Recommendations Section */}
                       {analysisResult.recommendations?.length > 0 && (
                         <div>
-                          <h4 className="text-foreground font-semibold mb-2">{t('dashboard.analysis.recommendations')}</h4>
+                          <h4 className="text-foreground font-semibold mb-2">
+                            {i18n.language === "bn" ? "সুপারিশসমূহ" : t('dashboard.analysis.recommendations')}
+                          </h4>
                           <ul className="space-y-2">
                             {analysisResult.recommendations.map((rec: string, i: number) => (
                               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -348,8 +379,11 @@ const Dashboard = () => {
                         </div>
                       )}
 
-                      <p className="text-xs text-muted-foreground/60 italic">
-                        {t('dashboard.analysis.disclaimer')}
+                      {/* Medical Disclaimer */}
+                      <p className="text-xs text-muted-foreground/60 italic border-l-2 border-primary/30 pl-3">
+                        {i18n.language === "bn" 
+                          ? "⚠️ এটি একটি AI-সহায়ক বিশ্লেষণ। চিকিৎসকীয় সিদ্ধান্তের জন্য সর্বদা যোগ্য স্বাস্থ্যসেবা পেশাদারের পরামর্শ নিন।"
+                          : t('dashboard.analysis.disclaimer')}
                       </p>
                     </div>
                   ) : (

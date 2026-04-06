@@ -178,5 +178,33 @@
     "toggle": "ভাষা",
     "english": "English",
     "bengali": "বাংলা"
+  },
+  "medicalAnalysis": {
+    "title": "চিকিৎসা স্বাস্থ্য বিশ্লেষণ",
+    "description": "আপনার উপসর্গ এবং জীবন সংকেত এআই দিয়ে বিশ্লেষণ করুন",
+    "symptoms": "উপসর্গ",
+    "symptomsPlaceholder": "যেমন: মাথাব্যথা, জ্বর, কাশি...",
+    "symptomsHint": "কমা দ্বারা পৃথক করুন",
+    "medicalHistory": "চিকিৎসা ইতিহাস",
+    "medicalHistoryPlaceholder": "কোনো দীর্ঘমেয়াদী রোগ বা অ্যালার্জি...",
+    "heartRate": "হার্ট রেট (bpm)",
+    "heartRatePlaceholder": "60-100",
+    "bloodPressure": "রক্তচাপ",
+    "bloodPressurePlaceholder": "120/80",
+    "temperature": "তাপমাত্রা (°F)",
+    "temperaturePlaceholder": "98.6",
+    "oxygenSaturation": "অক্সিজেন স্যাচুরেশন (%)",
+    "oxygenSaturationPlaceholder": "95-100",
+    "analyze": "বিশ্লেষণ করুন",
+    "analyzing": "বিশ্লেষণ চলছে...",
+    "severity": "গুরুত্বতা",
+    "diagnosis": "রোগ নির্ণয়",
+    "recommendations": "সুপারিশ",
+    "newAnalysis": "নতুন বিশ্লেষণ",
+    "enterInfo": "অনুগ্রহ করে কমপক্ষে একটি তথ্য প্রদান করুন",
+    "analysisCompleted": "বিশ্লেষণ সম্পন্ন",
+    "analysisFailed": "বিশ্লেষণ ব্যর্থ",
+    "warning": "সাবধানী: এটি একটি গুরুতর অবস্থা হতে পারে। অবিলম্বে চিকিৎসকের পরামর্শ নিন।",
+    "disclaimer": "⚠️ এটি একটি AI-সহায়ক বিশ্লেষণ। চিকিৎসকীয় সিদ্ধান্তের জন্য সর্বদা যোগ্য স্বাস্থ্যসেবা পেশাদারের পরামর্শ নিন।"
   }
 }
