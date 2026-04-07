@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/services/firebase";
+import { handleRedirectResult } from "@/services/auth";
 import { toast } from "sonner";
 
 const AuthCallback = () => {
@@ -8,59 +10,48 @@ const AuthCallback = () => {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      console.log("Auth callback triggered");
+      console.log("🔄 Firebase Auth Callback triggered");
       console.log("Current URL:", window.location.href);
-      console.log("Hash fragment:", window.location.hash);
       
       try {
-        // First, check if there's already a session (OAuth usually sets this)
-        const { data: { session }, error: sessionCheckError } = await supabase.auth.getSession();
+        // Step 1: Handle Firebase redirect result (critical for OAuth flow)
+        console.log("📍 Checking for redirect result...");
+        const redirectUser = await handleRedirectResult();
         
-        if (sessionCheckError) {
-          console.error("Session check error:", sessionCheckError);
-          throw sessionCheckError;
-        }
-        
-        if (session) {
-          console.log("Session found from OAuth!");
-          toast.success("Logged in successfully!");
-          navigate("/dashboard");
+        // Step 2: Wait for Firebase auth state to settle
+        console.log("⏳ Waiting for auth state...");
+        const authStatePromise = new Promise((resolve) => {
+          const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe();
+            console.log("✅ Auth state settled. User:", user?.email || "none");
+            resolve(user);
+          });
+        });
+
+        const user = await authStatePromise;
+
+        if (user) {
+          console.log("✅ User authenticated successfully:", user.email);
+          toast.success("🎉 Logged in successfully!");
+          // Redirect to dashboard after a brief delay to show the toast
+          setTimeout(() => navigate("/dashboard", { replace: true }), 500);
           return;
         }
 
-        // Fallback: Get the URL hash fragment which contains the access tokens
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const error = hashParams.get('error');
-        const errorDescription = hashParams.get('error_description');
-        
-        console.log("Tokens found:", { accessToken: !!accessToken, refreshToken: !!refreshToken });
-        console.log("Error in URL:", { error, errorDescription });
-        
-        if (error) {
-          throw new Error(errorDescription || error);
-        }
-        
-        if (accessToken && refreshToken) {
-          // Set the session using the tokens from the URL
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          
-          if (sessionError) throw sessionError;
-          toast.success("Email verified successfully!");
-          navigate("/dashboard");
-        } else {
-          // No session or tokens found
-          console.warn("No session or tokens found, redirecting to auth");
-          navigate("/auth");
-        }
+        // Step 3: If no user, redirect back to auth page
+        console.log("❌ No authenticated user found, redirecting to /auth");
+        navigate("/auth", { replace: true });
+
       } catch (error: any) {
-        console.error("Auth callback error:", error);
-        toast.error(error.message || "Authentication failed");
-        navigate("/auth");
+        console.error("❌ Auth callback error:", error);
+        
+        // Don't show error if it's just "no redirect result" (normal case)
+        if (error.message && !error.message.includes("no redirect")) {
+          toast.error(error.message || "Authentication failed");
+        }
+        
+        // Redirect back to auth page after a brief delay
+        setTimeout(() => navigate("/auth", { replace: true }), 1000);
       }
     };
 
@@ -68,10 +59,15 @@ const AuthCallback = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-foreground">Verifying your authentication...</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
+        </div>
+        <div>
+          <p className="text-lg font-semibold text-gray-800">Processing your login...</p>
+          <p className="text-sm text-gray-600 mt-1">Redirecting to your dashboard</p>
+        </div>
       </div>
     </div>
   );

@@ -2,13 +2,14 @@
  * Google Login Component
  * 
  * Features:
- * - "Continue with Google" button
+ * - "Continue with Google" button (adaptive: popup on localhost, redirect on production)
  * - Shows user profile after login
  * - Logout functionality
  * - Loading states
  * - Error handling
  * - Mobile-friendly design
  * - Bilingual support (English + Bengali)
+ * - Handles OAuth redirect results (production Firebase Hosting)
  * 
  * Usage:
  * <GoogleLogin />
@@ -16,11 +17,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LogOut, LogIn, Loader2, AlertCircle } from 'lucide-react';
+import { LogOut, LogIn, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { loginWithGoogle, logout, trackAuthState } from '@/services/auth';
+import { loginWithGoogle, logout, trackAuthState, handleRedirectResult } from '@/services/auth';
 
 const GoogleLogin = () => {
   const { i18n } = useTranslation();
@@ -28,6 +29,8 @@ const GoogleLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [authInitialized, setAuthInitialized] = useState(false);
+  const [isHandlingRedirect, setIsHandlingRedirect] = useState(true);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   const currentLanguage = i18n.language;
 
@@ -35,6 +38,39 @@ const GoogleLogin = () => {
   const getLocalizedText = (en, bn) => {
     return currentLanguage === 'bn' ? bn : en;
   };
+
+  // Handle OAuth redirect result (production Firebase Hosting)
+  // This is CRITICAL for handling the OAuth redirect flow after Google login
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      setIsHandlingRedirect(true);
+      setError(null);
+      
+      try {
+        const redirectUser = await handleRedirectResult();
+        if (redirectUser) {
+          console.log('User logged in via redirect:', redirectUser);
+          setUser(redirectUser);
+          setSuccessMessage(getLocalizedText(
+            'Successfully logged in!',
+            'সফলভাবে লগ ইন করেছেন!'
+          ));
+          // Clear success message after 3 seconds
+          setTimeout(() => setSuccessMessage(null), 3000);
+        }
+      } catch (err) {
+        console.error('Redirect result error:', err);
+        // Only show error if it's not just "no redirect" (which is normal)
+        if (err.code !== 'auth/no-redirect-result') {
+          setError(err.message);
+        }
+      } finally {
+        setIsHandlingRedirect(false);
+      }
+    };
+
+    checkRedirectResult();
+  }, [currentLanguage]);
 
   // Monitor authentication state on component mount
   useEffect(() => {
@@ -53,14 +89,26 @@ const GoogleLogin = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const loggedInUser = await loginWithGoogle();
-      setUser(loggedInUser);
-      console.log('Login successful:', loggedInUser);
+      if (loggedInUser) {
+        setUser(loggedInUser);
+        setSuccessMessage(getLocalizedText(
+          'Successfully logged in!',
+          'সফলভাবে লগ ইন করেছেন!'
+        ));
+        console.log('Login successful:', loggedInUser);
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
     } catch (err) {
       console.error('Login failed:', err);
-      setError(err.message);
+      setError(err.message || getLocalizedText(
+        'Login failed. Please try again.',
+        'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।'
+      ));
     } finally {
       setLoading(false);
     }
@@ -70,24 +118,40 @@ const GoogleLogin = () => {
   const handleLogout = async () => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       await logout();
       setUser(null);
+      setSuccessMessage(getLocalizedText(
+        'Signed out successfully!',
+        'সফলভাবে সাইন আউট করেছেন!'
+      ));
       console.log('Logout successful');
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       console.error('Logout failed:', err);
-      setError(err.message);
+      setError(err.message || getLocalizedText(
+        'Logout failed. Please try again.',
+        'লগ-আউট ব্যর্থ হয়েছে। আবার চেষ্টা করুন।'
+      ));
     } finally {
       setLoading(false);
     }
   };
 
-  // Don't render until we've checked auth state
-  if (!authInitialized) {
+  // Show loading state while checking auth and redirect
+  if (!authInitialized || isHandlingRedirect) {
     return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+      <div className="flex flex-col items-center justify-center p-4 space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <p className="text-gray-600 text-sm">
+          {getLocalizedText(
+            'Loading...',
+            'লোড হচ্ছে...'
+          )}
+        </p>
       </div>
     );
   }
@@ -116,6 +180,14 @@ const GoogleLogin = () => {
           {/* Login Card */}
           <Card className="p-6 sm:p-8 border-2">
             <div className="space-y-4">
+              {/* Success Message */}
+              {successMessage && (
+                <Alert className="bg-green-50 border-green-200">
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <AlertDescription className="text-green-800 text-sm">{successMessage}</AlertDescription>
+                </Alert>
+              )}
+
               {/* Google Login Button */}
               <Button
                 onClick={handleGoogleLogin}
@@ -208,6 +280,14 @@ const GoogleLogin = () => {
 
             {/* Logout Button */}
             <div className="mt-6 flex flex-col gap-3">
+              {/* Success Message */}
+              {successMessage && (
+                <Alert className="bg-green-50 border-green-200">
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <AlertDescription className="text-green-800 text-sm">{successMessage}</AlertDescription>
+                </Alert>
+              )}
+
               <Button
                 onClick={handleLogout}
                 disabled={loading}

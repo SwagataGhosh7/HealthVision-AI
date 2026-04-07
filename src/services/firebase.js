@@ -1,12 +1,12 @@
 /**
- * Firebase Configuration
- * Initialize Firebase with HealthVision AI credentials
+ * Firebase Configuration & Initialization
+ * HealthVision AI - Complete Authentication System
  * 
  * Features:
- * - Firebase App initialization
- * - Modular SDK (v9+)
- * - Production-ready configuration
- * - Works with Google Authentication
+ * ✅ Firebase v9+ modular syntax
+ * ✅ Production-ready configuration
+ * ✅ Works on localhost and Firebase Hosting
+ * ✅ Google OAuth 2.0 support
  */
 
 import { initializeApp } from "firebase/app";
@@ -24,7 +24,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Authentication and get a reference to the service
+// Get Firebase Authentication instance
 export const auth = getAuth(app);
+
+// Detect environment
+export const isProduction = !window.location.hostname.includes("localhost");
+export const isDevelopment = window.location.hostname.includes("localhost");
+
+console.log(`🌍 Environment: ${isDevelopment ? "Development (localhost)" : "Production (Firebase Hosting)"}`);
 
 export default app;
