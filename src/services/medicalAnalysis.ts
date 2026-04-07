@@ -37,6 +37,22 @@ export interface MedicalAnalysisResponse {
   originalLanguage: AnalysisLanguage;
 }
 
+export interface MedicineInformationRequest {
+  medicineName: string;
+  language?: AnalysisLanguage;
+}
+
+export interface MedicineInformationResponse {
+  medicineName: string | BilingualContent;
+  genericName?: string | BilingualContent;
+  uses: (string | BilingualContent)[];
+  dosage: string | BilingualContent;
+  sideEffects: (string | BilingualContent)[];
+  precautions: (string | BilingualContent)[];
+  interactions?: (string | BilingualContent)[];
+  language: AnalysisLanguage;
+}
+
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 const OPENAI_MODEL = 'gpt-4-turbo';
 
@@ -88,6 +104,94 @@ Guidelines:
 - Recommendations should be 2-3 items
 - If severity is severe or there are warning signs, set warningSign to true
 - ALWAYS include disclaimer: "⚠️ This is an AI-assisted analysis. Always consult a qualified healthcare professional for medical decisions."`;
+
+/**
+ * Prompt for medicine information in English
+ */
+const MEDICINE_INFORMATION_PROMPT_EN = `You are a pharmacist and medical information specialist. Provide detailed information about the requested medicine.
+
+Respond in JSON format only (no markdown, no code blocks):
+{
+  "medicineName": "Full medicine name",
+  "genericName": "Generic/active ingredient name",
+  "uses": [
+    "Primary use 1",
+    "Primary use 2",
+    "Primary use 3"
+  ],
+  "dosage": "Standard dosage recommendation (e.g., 500mg twice daily)",
+  "sideEffects": [
+    "Common side effect 1",
+    "Common side effect 2",
+    "Rare but serious side effect"
+  ],
+  "precautions": [
+    "Precaution or contraindication 1",
+    "Precaution or contraindication 2",
+    "Special patient groups warning"
+  ],
+  "interactions": [
+    "Common drug interaction 1",
+    "Common drug interaction 2"
+  ]
+}
+
+Guidelines:
+- Include 2-3 uses, 2-4 side effects, 2-3 precautions
+- Be accurate with dosage recommendations
+- Include interaction warnings if known
+- ALWAYS include disclaimer: "⚠️ This information is for reference only. Always consult your pharmacist or healthcare provider before taking any medicine."`;
+
+/**
+ * Prompt for bilingual medicine information (English + Bengali)
+ */
+const MEDICINE_INFORMATION_PROMPT_BILINGUAL = `You are a pharmacist and medical information specialist. Provide detailed medicine information in BOTH English and Bengali.
+
+CRITICAL: Respond with this EXACT JSON format (no markdown, no code blocks):
+{
+  "medicineName": {
+    "en": "Full medicine name in English",
+    "bn": "ওষুধের সম্পূর্ণ নাম বাংলায়"
+  },
+  "genericName": {
+    "en": "Generic name in English",
+    "bn": "সাধারণ নাম বাংলায়"
+  },
+  "uses": [
+    {
+      "en": "Use in English",
+      "bn": "বাংলায় ব্যবহার"
+    }
+  ],
+  "dosage": {
+    "en": "Standard dosage in English",
+    "bn": "বাংলায় মাত্রা"
+  },
+  "sideEffects": [
+    {
+      "en": "Side effect in English",
+      "bn": "বাংলায় পার্শ্ব প্রতিক্রিয়া"
+    }
+  ],
+  "precautions": [
+    {
+      "en": "Precaution in English",
+      "bn": "বাংলায় সতর্কতা"
+    }
+  ],
+  "interactions": [
+    {
+      "en": "Interaction in English",
+      "bn": "বাংলায় ইন্টারঅ্যাকশন"
+    }
+  ]
+}
+
+Guidelines:
+- Include 2-3 uses, 2-4 side effects, 2-3 precautions
+- Use proper Bengali script (Unicode)
+- Keep medical terminology accurate in both languages
+- Include interaction warnings if known`;
 
 const TRANSLATE_PROMPT = (text: string, targetLanguage: AnalysisLanguage) => `Translate the following medical text to ${targetLanguage === 'bn' ? 'Bengali' : 'English'}. Keep medical terminology accurate.
 
@@ -293,4 +397,121 @@ function formatPatientInfo(request: MedicalAnalysisRequest): string {
   }
 
   return info || 'No patient information provided.';
+}
+
+/**
+ * Get medicine information in English
+ */
+export async function getMedicineInformationEnglish(
+  request: MedicineInformationRequest
+): Promise<MedicineInformationResponse> {
+  const prompt = `${MEDICINE_INFORMATION_PROMPT_EN}
+
+Medicine to lookup: ${request.medicineName}`;
+
+  try {
+    const response = await callOpenAI(prompt);
+    
+    interface MedicineData {
+      medicineName: string;
+      genericName?: string;
+      uses: string[];
+      dosage: string;
+      sideEffects: string[];
+      precautions: string[];
+      interactions?: string[];
+    }
+    
+    let medicine: MedicineData;
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      medicine = JSON.parse(jsonMatch[0]) as MedicineData;
+    } else {
+      medicine = JSON.parse(response) as MedicineData;
+    }
+
+    return {
+      medicineName: medicine.medicineName,
+      genericName: medicine.genericName,
+      uses: medicine.uses || [],
+      dosage: medicine.dosage,
+      sideEffects: medicine.sideEffects || [],
+      precautions: medicine.precautions || [],
+      interactions: medicine.interactions,
+      language: 'en',
+    };
+  } catch (error) {
+    console.error('Medicine information lookup failed:', error);
+    throw new Error('Failed to retrieve medicine information. Please try again.');
+  }
+}
+
+/**
+ * Get bilingual medicine information (English + Bengali)
+ */
+export async function getMedicineBilingualInformation(
+  request: MedicineInformationRequest
+): Promise<MedicineInformationResponse> {
+  const prompt = `${MEDICINE_INFORMATION_PROMPT_BILINGUAL}
+
+Medicine to lookup: ${request.medicineName}`;
+
+  try {
+    const response = await callOpenAI(prompt);
+    
+    interface BilingualMedicineData {
+      medicineName: BilingualContent;
+      genericName?: BilingualContent;
+      uses: BilingualContent[];
+      dosage: BilingualContent;
+      sideEffects: BilingualContent[];
+      precautions: BilingualContent[];
+      interactions?: BilingualContent[];
+    }
+    
+    let medicine: BilingualMedicineData;
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      medicine = JSON.parse(jsonMatch[0]) as BilingualMedicineData;
+    } else {
+      medicine = JSON.parse(response) as BilingualMedicineData;
+    }
+
+    return {
+      medicineName: medicine.medicineName,
+      genericName: medicine.genericName,
+      uses: medicine.uses || [],
+      dosage: medicine.dosage,
+      sideEffects: medicine.sideEffects || [],
+      precautions: medicine.precautions || [],
+      interactions: medicine.interactions,
+      language: 'bn',
+    };
+  } catch (error) {
+    console.error('Bilingual medicine information lookup failed:', error);
+    throw new Error('Failed to retrieve medicine information. Please try again.');
+  }
+}
+
+/**
+ * Get medicine information with translation support
+ * - English mode: Returns English only
+ * - Bengali mode: Returns bilingual (Bengali + English)
+ */
+export async function getMedicineInformation(
+  request: MedicineInformationRequest,
+  targetLanguage: AnalysisLanguage
+): Promise<MedicineInformationResponse> {
+  // Use bilingual API call for Bengali to get both languages in one request
+  if (targetLanguage === 'bn') {
+    try {
+      return await getMedicineBilingualInformation(request);
+    } catch (error) {
+      console.warn('Bilingual medicine lookup failed, falling back to English:', error);
+      // Fallback: get English info
+    }
+  }
+
+  // English mode: get English only
+  return await getMedicineInformationEnglish(request);
 }
