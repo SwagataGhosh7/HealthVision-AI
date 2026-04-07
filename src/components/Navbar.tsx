@@ -1,16 +1,39 @@
 import { motion } from "framer-motion";
-import { Activity, Menu, X, Sun, Moon } from "lucide-react";
-import { useState } from "react";
+import { Activity, Menu, X, Sun, Moon, LogOut, LogIn } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/use-theme";
+import { trackAuthState, logout } from "@/services/auth";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+
+  // Monitor Firebase authentication state
+  useEffect(() => {
+    const unsubscribe = trackAuthState((currentUser) => {
+      setFirebaseUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const isAuthenticated = user || firebaseUser;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setFirebaseUser(null);
+      setShowUserMenu(false);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <motion.nav
@@ -42,20 +65,95 @@ const Navbar = () => {
           </a>
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-3 relative">
           <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" onClick={toggleTheme}>
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          {user ? (
-            <Button size="sm" className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </Button>
+          {isAuthenticated ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent/10 transition-colors"
+              >
+                {firebaseUser?.photo ? (
+                  <img
+                    src={firebaseUser.photo}
+                    alt={firebaseUser.name}
+                    className="h-8 w-8 rounded-full"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-gradient-accent flex items-center justify-center">
+                    <span className="text-xs text-accent-foreground font-semibold">
+                      {firebaseUser?.name?.charAt(0) || user?.email?.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <span className="text-sm font-medium text-foreground hidden lg:block">
+                  {firebaseUser?.name || user?.email?.split("@")[0]}
+                </span>
+              </button>
+
+              {/* User Dropdown Menu */}
+              {showUserMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute right-0 mt-2 w-48 bg-background border border-border/50 rounded-lg shadow-xl z-50"
+                >
+                  <div className="p-4 border-b border-border/30">
+                    <p className="text-sm font-semibold text-foreground">
+                      {firebaseUser?.name || user?.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {firebaseUser?.email || user?.email}
+                    </p>
+                  </div>
+                  <div className="p-2 space-y-1">
+                    <button
+                      onClick={() => {
+                        navigate("/dashboard");
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent/10 rounded-md transition-colors"
+                    >
+                      Dashboard
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate("/profile");
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent/10 rounded-md transition-colors"
+                    >
+                      Profile Settings
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-md transition-colors flex items-center gap-2"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </div>
           ) : (
             <>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => navigate("/auth")}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/auth")}
+              >
+                <LogIn className="h-4 w-4 mr-1" />
                 Sign In
               </Button>
-              <Button size="sm" className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity" onClick={() => navigate("/auth")}>
+              <Button
+                size="sm"
+                className="bg-gradient-accent text-accent-foreground glow hover:opacity-90 transition-opacity"
+                onClick={() => navigate("/auth")}
+              >
                 Get Started
               </Button>
             </>
@@ -81,10 +179,52 @@ const Navbar = () => {
               {theme === "dark" ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
               {theme === "dark" ? "Light Mode" : "Dark Mode"}
             </Button>
-            {user ? (
-              <Button size="sm" className="bg-gradient-accent text-accent-foreground mt-2" onClick={() => navigate("/dashboard")}>Dashboard</Button>
+            {isAuthenticated ? (
+              <div className="space-y-2 pt-2 border-t border-border/30">
+                <div className="px-3 py-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    {firebaseUser?.name || user?.email}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {firebaseUser?.email || user?.email}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full bg-gradient-accent text-accent-foreground"
+                  onClick={() => {
+                    navigate("/dashboard");
+                    setIsOpen(false);
+                  }}
+                >
+                  Dashboard
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    navigate("/profile");
+                    setIsOpen(false);
+                  }}
+                >
+                  Profile Settings
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
             ) : (
-              <Button size="sm" className="bg-gradient-accent text-accent-foreground mt-2" onClick={() => navigate("/auth")}>Get Started</Button>
+              <Button size="sm" className="bg-gradient-accent text-accent-foreground mt-2" onClick={() => {navigate("/auth"); setIsOpen(false);}}>Get Started</Button>
             )}
           </div>
         </motion.div>
